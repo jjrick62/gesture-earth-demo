@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gesture Earth Demo</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- 3D 地球 -->
+  <div id="globe-container"></div>
+
+  <!-- 摄像头实时画面小窗 -->
+  <video id="camera-window" autoplay playsinline muted></video>
+
+  <!-- 手势状态面板（右下） -->
+  <div id="gesture-panel">
+    <div id="gesture-status">— 加载中...</div>
+    <div id="gesture-action"></div>
+    <div id="sensitivity-display"></div>
+  </div>
+
+  <!-- 手势提示面板（底部居中，初次加载显示） -->
+  <div id="gesture-hint">
+    <div>🖐 张开手掌移动 → 旋转地球</div>
+    <div>🤏 拇指食指捏合 → 缩放地球</div>
+    <div>✊ 握拳 → 暂停/恢复自转</div>
+    <div>☝ 单食指指向 → 标记位置</div>
+    <div style="margin-top:0.25rem;font-size:0.625rem;color:#555">+/- 调节灵敏度 · R 重置</div>
+  </div>
+
+  <!-- 底部状态栏 -->
+  <div id="status-bar">
+    <span id="camera-indicator">🟡 初始化中...</span>
+    <span id="fps-display">—</span>
+    <span id="error-msg" style="display:none"></span>
+  </div>
+
+  <!-- 加载遮罩 -->
+  <div id="loading-overlay">
+    <div>
+      <p>Gesture Earth Demo</p>
+      <p style="font-size:0.75rem;color:#666;margin-top:0.5rem">正在初始化...</p>
+    </div>
+  </div>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
