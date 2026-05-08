@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx http-server *)",
+      "Bash(npm *)",
+      "Bash(node *)",
+      "Bash(git *)",
+      "Read(D:\\大学作业文件夹\\自制软件\\gesture-earth-demo\\**)",
+      "Write(D:\\大学作业文件夹\\自制软件\\gesture-earth-demo\\**)",
+      "Edit(D:\\大学作业文件夹\\自制软件\\gesture-earth-demo\\**)",
+      "Glob(D:\\大学作业文件夹\\自制软件\\gesture-earth-demo\\**)",
+      "Grep(D:\\大学作业文件夹\\自制软件\\gesture-earth-demo\\**)",
+      "Bash(start http://localhost:*)",
+      "Bash(netstat *)",
+      "Bash(taskkill *)"
+    ]
+  }
+}

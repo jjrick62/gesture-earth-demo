@@ -1,4 +1,4 @@
-// ===== Three.js 粒子地球 =====
+﻿// ===== Three.js 粒子地球 =====
 
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
@@ -188,7 +188,7 @@ export class Earth {
 
   clearCoastlines() {
     this._breathStartTime = null;
-    for (const key of ['coastlinePoints', 'borderPoints', 'admin1ChinaPoints', 'admin1ForeignPoints', 'cityPoints', 'districtPoints']) {
+    for (const key of ['coastlinePoints', 'borderPoints', 'admin1ChinaPoints', 'admin1AsiaPoints', 'admin1RestPoints', 'cityPoints', 'districtPoints']) {
       if (this[key]) {
         this.earthGroup.remove(this[key]);
         this[key] = null;
@@ -237,37 +237,77 @@ export class Earth {
     this._sizedPoints.push({ mesh: this._ringPoints, baseSize: 1.0 });
   }
 
-  // ===== 加载全球一级行政区边界（省/州/都道府县） =====
+  // ===== 加载全球一级行政区边界（分区域异步加载） =====
+  // 加载状态：pending → loading → loaded
+  // 兜底顺序：中国(await) → 亚太(后台) → 欧美(后台)
+  // 用户聚焦某区域时，_priorityRegion 插队优先加载
   async loadAdminBoundaries() {
+    this._adminLoadState = { china: 'pending', asia: 'pending', rest: 'pending' };
+    this._priorityRegion = null;
+
+    // 1) 中国优先，同步等待
+    await this._loadRegion('admin1_china', 'china', {
+      color: 0xffffff, size: 1.5, opacity: 0.4,
+    }, 'admin1ChinaPoints');
+
+    // 2) 后台异步加载剩余区域
+    this._scheduleRemaining();
+  }
+
+  // 加载单个区域文件
+  async _loadRegion(fileName, region, style, meshKey) {
+    if (this._adminLoadState[region] === 'loaded') return;
+    this._adminLoadState[region] = 'loading';
     try {
-      const resp = await fetch('data/map/world_admin1.geojson');
+      const resp = await fetch(`data/map/${fileName}.geojson`);
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       const data = await resp.json();
-
-      // 拆成中国和国外两套 mesh，独立控制缩放阈值
-      const chinaF = [], foreignF = [];
-      for (const f of data.features) {
-        const p = f.properties || {};
-        if (p.iso_a2 === 'CN' || p.admin === 'China') chinaF.push(f);
-        else foreignF.push(f);
+      if (data.features.length > 0) {
+        if (region === 'china') this._provinceFeatures = data.features;
+        this._geoJSONToParticles(data, style, meshKey, true);
       }
-
-      if (chinaF.length > 0) {
-        this._provinceFeatures = chinaF;
-        this._geoJSONToParticles({ type: 'FeatureCollection', features: chinaF }, {
-          color: 0xffffff, size: 1.5, opacity: 0.4,
-        }, 'admin1ChinaPoints', true);
-      }
-      if (foreignF.length > 0) {
-        this._geoJSONToParticles({ type: 'FeatureCollection', features: foreignF }, {
-          color: 0xffffff, size: 0.85, opacity: 0.28,
-        }, 'admin1ForeignPoints', true);
-      }
-
-      this._createHomeFill();
-      if (this._onDataReady) this._onDataReady();
+      this._adminLoadState[region] = 'loaded';
+      if (region === 'china') this._createHomeFill();
     } catch (err) {
-      console.warn('Admin1 load failed:', err);
+      console.warn(`[earth] ${fileName} load failed:`, err);
+      this._adminLoadState[region] = 'pending';
+    }
+  }
+
+  // 后台调度：有优先区域则插队，否则兜底顺序 亚太→欧美
+  _scheduleRemaining() {
+    const loadAsia = () => {
+      if (this._adminLoadState.asia !== 'pending') return;
+      this._loadRegion('admin1_asia', 'asia', {
+        color: 0xffffff, size: 0.85, opacity: 0.32,
+      }, 'admin1AsiaPoints');
+    };
+    const loadRest = () => {
+      if (this._adminLoadState.rest !== 'pending') return;
+      this._loadRegion('admin1_eur_amer', 'rest', {
+        color: 0xffffff, size: 0.85, opacity: 0.24,
+      }, 'admin1RestPoints');
+    };
+    if (this._priorityRegion === 'rest') { loadRest(); loadAsia(); }
+    else if (this._priorityRegion === 'asia') { loadAsia(); loadRest(); }
+    else { loadAsia(); loadRest(); }
+  }
+
+  // 根据经纬度判断所属区域，标记优先级并触发加载
+  _prioritizeRegion(lat, lng) {
+    // 中国范围约 18-54N, 73-135E — 已 await 加载，无需动作
+    if (lat >= 18 && lat <= 54 && lng >= 73 && lng <= 135) return;
+    // 亚太范围（含东亚/东南亚/南亚/大洋洲/中亚/俄罗斯）
+    if (lat >= -50 && lat <= 70 && lng >= 60 && lng <= 180) {
+      if (this._adminLoadState.asia === 'pending') {
+        this._priorityRegion = 'asia';
+        this._scheduleRemaining();
+      }
+    } else {
+      if (this._adminLoadState.rest === 'pending') {
+        this._priorityRegion = 'rest';
+        this._scheduleRemaining();
+      }
     }
   }
 
@@ -777,6 +817,7 @@ export class Earth {
 
   // ===== 飞行聚焦到地点 =====
   focusOnPlace(lat, lng, onArrive) {
+    if (this._prioritizeRegion) this._prioritizeRegion(lat, lng);
     const local = this._latLngToVec3(lat, lng, this.earthRadius * 1.01);
     const world = local.clone().applyMatrix4(this.earthGroup.matrixWorld);
     const radial = world.clone().normalize();
@@ -949,9 +990,13 @@ export class Earth {
     if (this.admin1ChinaPoints) {
       this._applyZoomLayer(this.admin1ChinaPoints, distFromCenter, 2.8, 0.4, '_chinaAdminOpacity');
     }
-    // 外国州界
-    if (this.admin1ForeignPoints) {
-      this._applyZoomLayer(this.admin1ForeignPoints, distFromCenter, 2.2, 0.28, '_foreignAdminOpacity');
+    // 亚太州界 — 地心距 < 2.5
+    if (this.admin1AsiaPoints) {
+      this._applyZoomLayer(this.admin1AsiaPoints, distFromCenter, 2.5, 0.32, '_asiaAdminOpacity');
+    }
+    // 欧美州界 — 地心距 < 2.2
+    if (this.admin1RestPoints) {
+      this._applyZoomLayer(this.admin1RestPoints, distFromCenter, 2.2, 0.24, '_restAdminOpacity');
     }
 
     // 市界 — 地心距 < 2.2
@@ -975,8 +1020,10 @@ export class Earth {
         this.borderPoints.material.opacity = breathe(this._borderOpacity || 0, 1.3);
       if (this.admin1ChinaPoints)
         this.admin1ChinaPoints.material.opacity = breathe(this._chinaAdminOpacity || 0, 1.1);
-      if (this.admin1ForeignPoints)
-        this.admin1ForeignPoints.material.opacity = breathe(this._foreignAdminOpacity || 0, 0.9);
+      if (this.admin1AsiaPoints)
+        this.admin1AsiaPoints.material.opacity = breathe(this._asiaAdminOpacity || 0, 1.0);
+      if (this.admin1RestPoints)
+        this.admin1RestPoints.material.opacity = breathe(this._restAdminOpacity || 0, 0.9);
       if (this.cityPoints)
         this.cityPoints.material.opacity = breathe(this._cityOpacity || 0, 1.0);
       if (this.districtPoints)

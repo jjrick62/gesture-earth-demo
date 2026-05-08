@@ -69,12 +69,10 @@ export async function initCamera(onFrameCallback) {
   // 6. 初始化 WASM
   const wasmFileset = await FilesetResolver.forVisionTasks(VISION_BASE + '/wasm');
 
-  // 7. 创建 HandLandmarker
-  // 模型文件在 Google 官方存储，jsdelivr 上没有
+  // 7. 创建 HandLandmarker — 模型文件已本地化到 data/models/
   _hands = await HandLandmarker.createFromOptions(wasmFileset, {
     baseOptions: {
-      modelAssetPath:
-        'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task',
+      modelAssetPath: 'data/models/hand_landmarker.task',
     },
     runningMode: 'VIDEO',
     numHands: 1,
