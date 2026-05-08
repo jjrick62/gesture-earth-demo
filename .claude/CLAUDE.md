@@ -51,6 +51,9 @@ npx http-server . -p 8082 -c-1
 4. **绝对距离阈值不可靠** — 手远近不同判出结果不同，必须用比例判定
 5. **`detectForVideo` 是同步返回结果** — `const result = _hands.detectForVideo(_video, now)`，不是回调模式
 6. **MediaPipe 模型已本地化** — 模型文件在 `data/models/hand_landmarker.task`，`camera.js` 指向本地路径，不再依赖 Google CDN
+7. **低频→高频变量必须补偿频率差** — 摄像头 15fps，渲染 60fps。任何从 mapper 写、earth 读的变量，要么除以 4，要么调整衰减系数（60fps 下 0.96 ≈ 15fps 下 0.85）
+8. **持续操作的值用速度模型，不要用位置模型** — 旋转/俯仰必须走：累积 → 衰减 → 持续应用，不能在应用后清零（清零 = 退回 15fps 离散跳变）
+9. **先加日志再调参** — `% N` 控制输出频率，`[tag]` 区分来源，数值入参出参全打出来，一次定位
 
 ## 命名约定
 
@@ -97,6 +100,10 @@ npx http-server . -p 8082 -c-1
 - [x] 清理死文件 — 删除 `world_admin1.geojson`、`china_provinces.geojson`
 - [x] 项目工程化 — `.claude/CLAUDE.md` + `.claude/settings.json`
 - [x] 验证脚本 — `scripts/verify.py`，28/28 全部通过
+- [x] 手势缓动 15→60fps — mapper 只写目标速度，earth._animate() 平滑应用旋转/俯仰/缩放
+- [x] MediaPipe 帧跳过 — `_inferencing` 门卫 + `_skipCount` 兜底，防 WASM 推理积压
+- [x] 手势骨架镜像 — `gesture-canvas` 加 `transform: scaleX(-1)` 匹配摄像头视频
+- [x] 空闲刹车 — 手掌移开后旋转/俯仰自然衰减（0.96/frame），不等 mapper 清零
 
 ## 性能优化（进行中）
 
@@ -104,17 +111,18 @@ npx http-server . -p 8082 -c-1
 
 | 级别 | 问题 | 影响 |
 |------|------|------|
+| ✅ 已解决 | 手势缓动 15→60fps — mapper/earth 速度模型重构 | 旋转/俯仰/缩放丝滑 |
+| ✅ 已解决 | MediaPipe 推理无跳帧 — `_inferencing` 门卫 | 主线程不积压 |
 | 🔴 致命 | 粒子超绘 40万~100万+ × 2（正反面克隆），全部 AdditiveBlending | GPU fill rate |
 | 🔴 致命 | `admin1_eur_amer.geojson` 仍有 14MB，远距不可见时仍需下载 | 带宽 |
 | 🟠 重要 | `gesture.js` 每帧构建字符串（ratios.push），1/30 才用 | GC |
 | 🟠 重要 | 摄像头 FPS 控制不准（setTimeout+rAF 嵌套） | 帧率漂移 |
-| 🟠 重要 | MediaPipe 推理无跳帧 | 积压 |
 | 🟡 中等 | 热路径 Vector3 分配、多路 Math.sin/acos、无距离 LOD、无 Worker | 综合 |
 
 ### 下一步
 
-- [ ] 粒子 LOD — 远距降低粒子密度/跳过小图层
+- [ ] 粒子 LOD — 远距降低粒子密度/跳过小图层（shader 背面密度控制待定）
 - [ ] 延后 `admin1_eur_amer` 加载 — 只在缩放触发时才 fetch
-- [ ] 摄像头帧率控制优化
+- [ ] 摄像头帧率控制优化（setTimeout+rAF 嵌套改为纯 rAF + 帧计数）
 - [ ] gesture.js 减少 GC 分配
 - [ ] 手势展开卡片详情功能

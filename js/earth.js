@@ -27,6 +27,11 @@ export class Earth {
     this._backMeshes = [];
     this._frameCallbacks = [];
     this._focusedPlaceId = null;
+    this._gestureRotSpeed = 0;
+    this._gesturePitchDelta = 0;
+    this._gestureZoomSpeed = 0;
+    this._controlsLocked = false;
+    this._pitchDbg = 0;
 
     this._initScene();
     this._initControls();
@@ -932,6 +937,43 @@ export class Earth {
     }
     this.controls.rotateSpeed = 0.5 * speedFactor;
 
+    // ===== 手势缓动（60fps 平滑应用 mapper 计算的目标速度） =====
+    if (!this._flyStart) {
+      // 旋转 Y 轴（×0.25 补偿 60fps vs 15fps 频次差）
+      if (this._gestureRotSpeed && Math.abs(this._gestureRotSpeed) > 0.0001) {
+        this.earthGroup.rotation.y += this._gestureRotSpeed * 0.25;
+        this._gestureRotSpeed *= 0.96;
+        if (Math.abs(this._gestureRotSpeed) < 0.0001) this._gestureRotSpeed = 0;
+      }
+      // 俯仰（动量累积 + 60fps 平滑衰减，同旋转机制）
+      if (this._gesturePitchDelta && Math.abs(this._gesturePitchDelta) > 0.0001) {
+        const cam = this.camera.position;
+        const curDist = cam.length();
+        const phi = Math.max(0.1, Math.min(Math.PI - 0.1,
+          Math.acos(cam.y / curDist) + this._gesturePitchDelta * 0.25));
+        cam.y = curDist * Math.cos(phi);
+        const rd = curDist * Math.sin(phi);
+        const az = Math.atan2(cam.z, cam.x);
+        cam.x = rd * Math.cos(az);
+        cam.z = rd * Math.sin(az);
+        this._gesturePitchDelta *= 0.96;
+        if (Math.abs(this._gesturePitchDelta) < 0.0001) this._gesturePitchDelta = 0;
+      }
+      // 缩放
+      if (this._gestureZoomSpeed && Math.abs(this._gestureZoomSpeed) > 0.001) {
+        const cam = this.camera.position;
+        const cur = cam.length();
+        const mn = this.controls.minDistance || 1.55;
+        const mx = this.controls.maxDistance || 6;
+        const target = Math.max(mn, Math.min(mx, cur + this._gestureZoomSpeed));
+        const newDist = cur + (target - cur) * 0.3;
+        const sc = Math.max(mn, Math.min(mx, newDist)) / cur;
+        cam.x *= sc; cam.y *= sc; cam.z *= sc;
+        this._gestureZoomSpeed *= 0.9;
+        if (Math.abs(this._gestureZoomSpeed) < 0.001) this._gestureZoomSpeed = 0;
+      }
+    }
+
     // 淡入动画（慢速）
     for (let i = this.fadingItems.length - 1; i >= 0; i--) {
       const item = this.fadingItems[i];
@@ -1135,6 +1177,11 @@ export class Earth {
       cb();
     }
 
+    if (this._controlsLocked) {
+      this.controls.enableDamping = false;
+    } else {
+      this.controls.enableDamping = true;
+    }
     this.controls.update();
     this.renderer.render(this.scene, this.camera);
   }

@@ -56,7 +56,7 @@ export async function initCamera(onFrameCallback) {
   _canvas.id = 'gesture-canvas';
   _canvas.width = CAMERA_VIDEO.WIDTH;
   _canvas.height = CAMERA_VIDEO.HEIGHT;
-  _canvas.style.cssText = 'position:fixed;bottom:1rem;left:1rem;width:160px;height:120px;z-index:101;pointer-events:none';
+  _canvas.style.cssText = 'position:fixed;bottom:1rem;left:1rem;width:160px;height:120px;z-index:101;pointer-events:none;transform:scaleX(-1)';
   document.body.appendChild(_canvas);
   _ctx = _canvas.getContext('2d');
 
@@ -151,10 +151,29 @@ export function isFPSLow() {
   return getFPS() > 0 && getFPS() < FPS_WARN_THRESHOLD;
 }
 
+let _inferencing = false;
+let _skipCount = 0;
+
 function captureFrame() {
   if (!_video || !_hands) return;
+
+  if (_inferencing) {
+    _skipCount++;
+    if (_skipCount > 3) {
+      _inferencing = false;
+      _skipCount = 0;
+    }
+    setTimeout(() => requestAnimationFrame(captureFrame), 1000 / CAMERA_VIDEO.FPS);
+    return;
+  }
+
+  _skipCount = 0;
+  _inferencing = true;
+
   const now = performance.now();
   const result = _hands.detectForVideo(_video, now);
+  _inferencing = false;
+
   onHandsResults(result);
   setTimeout(() => requestAnimationFrame(captureFrame), 1000 / CAMERA_VIDEO.FPS);
 }

@@ -2,7 +2,7 @@
 import { SENS } from './constants.js';
 
 let _earth=null, _lp=null, _sens=SENS.ROTATE;
-let _rotV=0, _zoomV=0;  // 旋转和缩放的速度累积
+let _rotV=0, _pitchV=0, _zoomV=0;  // 旋转、俯仰、缩放的速度累积
 
 function clamp(v,mn,mx){return Math.max(mn,Math.min(mx,v))}
 
@@ -15,29 +15,28 @@ export function step(cls){
   const g=cls.gesture, c=cls.data.center;
   let s='i',a='';
 
-  const mn=_earth.controls.minDistance||1.7, mx=_earth.controls.maxDistance||6;
-  const cam=_earth.camera.position, cur=cam.length();
-
   if(g==='palm'){
     s='r'; a='旋转';
     _earth.rotating=false;
+    _earth._controlsLocked = true;
     _zoomV=0;
     if(_lp){
       const dx=c.x-_lp.x, dy=c.y-_lp.y;
-      // 累积旋转速度（镜像 + 20倍率），缓动衰减
-      _rotV += -dx*_sens*200;
-      _rotV *= 0.85; // 每帧衰减15%
-      _earth.earthGroup.rotation.y += _rotV;
-      if(Math.abs(dy)>0.001){
-        const dist=cur;
-        const phi=clamp(Math.acos(cam.y/dist)-dy*_sens*100,0.1,Math.PI-0.1);
-        cam.y=dist*Math.cos(phi);const rd=dist*Math.sin(phi),az=Math.atan2(cam.z,cam.x);
-        cam.x=rd*Math.cos(az);cam.z=rd*Math.sin(az);
+      _rotV += -dx*_sens*80;
+      _rotV *= 0.85;
+      _earth._gestureRotSpeed = _rotV;
+      _pitchV += -dy * _sens * 50;
+      _pitchV *= 0.85;
+      _earth._gesturePitchDelta = _pitchV;
+      if (++_earth._pitchDbg % 30 === 0) {
+        console.log(`[mapper] dx=${dx.toFixed(4)} dy=${dy.toFixed(4)} sens=${_sens.toFixed(5)} rotSpeed=${_rotV.toFixed(6)} pitchDelta=${_earth._gesturePitchDelta.toFixed(6)}`);
       }
     }
     _lp=c;
   }else{
-    _rotV=0; _lp=null;
+    _rotV=0; _pitchV=0; _lp=null;
+    // _gestureRotSpeed / _gesturePitchDelta 不清零，由 earth._animate() 自然衰减刹车
+    _earth._controlsLocked = false;
     if(g==='pointUp'){
       s='pu'; a='🔍 放大';
       _zoomV += 0.02;
@@ -52,14 +51,8 @@ export function step(cls){
     }else{
       s='i'; a='—'; _earth.rotating=true;
     }
-    // 缩放缓动：速度衰减 + 平滑移动
-    if(Math.abs(_zoomV)>0.001){
-      const t=clamp(cur+_zoomV,mn,mx);
-      const newDist=cur+(t-cur)*0.3; // lerp 30% toward target
-      const sc=clamp(newDist,mn,mx)/cur;
-      cam.x*=sc;cam.y*=sc;cam.z*=sc;
-      _zoomV*=0.9; // 衰减
-    }
+    _earth._gestureZoomSpeed = _zoomV;
+    _zoomV *= 0.9;
   }
 
   return {s,a};
