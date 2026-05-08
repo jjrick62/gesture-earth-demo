@@ -115,6 +115,7 @@ npx http-server . -p 8082 -c-1
 | ✅ 已解决 | MediaPipe 推理无跳帧 — `_inferencing` 门卫 | 主线程不积压 |
 | 🔴 致命 | 粒子超绘 40万~100万+ × 2（正反面克隆），全部 AdditiveBlending | GPU fill rate |
 | 🔴 致命 | `admin1_eur_amer.geojson` 仍有 14MB，远距不可见时仍需下载 | 带宽 |
+| 🔴 致命 | 手机端粒子频闪 — 16-bit 深度缓冲精度不足，粒子 1.003R 与遮挡球 1.0R 深度冲突 | 闪烁 |
 | 🟠 重要 | `gesture.js` 每帧构建字符串（ratios.push），1/30 才用 | GC |
 | 🟠 重要 | 摄像头 FPS 控制不准（setTimeout+rAF 嵌套） | 帧率漂移 |
 | 🟡 中等 | 热路径 Vector3 分配、多路 Math.sin/acos、无距离 LOD、无 Worker | 综合 |
@@ -126,3 +127,41 @@ npx http-server . -p 8082 -c-1
 - [ ] 摄像头帧率控制优化（setTimeout+rAF 嵌套改为纯 rAF + 帧计数）
 - [ ] gesture.js 减少 GC 分配
 - [ ] 手势展开卡片详情功能
+- [ ] 手机端粒子频闪修复 — 检测移动端跳过 `_backMeshes`，省一半粒子+根治深度冲突
+
+---
+
+## 2026-05-08 晚间会话交接
+
+### 本会话完成
+
+- [x] 手势骨架镜像 — `camera.js` canvas 加 `transform: scaleX(-1)`
+- [x] 手势缓动 15→60fps — `mapper.js` 只写目标速度，`earth.js _animate()` 60fps 应用
+- [x] 旋转/俯仰速度模型 — 累积 + 衰减，补偿 60fps 频次差（×0.25）
+- [x] MediaPipe 帧跳过 — `_inferencing` 门卫 + `_skipCount` 兜底
+- [x] 空闲刹车 — 手掌移开后 `_gestureRotSpeed` 自然衰减（0.96/frame），不自归零
+- [x] 旋转增益 200→80，俯仰动量累积增益 50
+- [x] 铁律新增 3 条（频率补偿、速度模型、先加日志）
+- [x] 手势控制方案独立提取 — `D:\大学作业文件夹\自制软件\手势控制\`，含 README + 移植指南
+- [x] GitHub Pages 地址 `jjrick62.github.io/gesture-earth-demo`
+
+### 当前状态
+
+- **手势控制体验良好**：旋转丝滑，俯仰温和，刹车自然
+- **灵敏度可通过 +/- 键调节**：默认 sens=0.005，影响所有增益
+- **两个已知问题未修**：手机端粒子频闪（16-bit 深度冲突）、admin1_eur_amer 14MB 全量下载
+- **点击检测基础设施就绪**（`clickMeshes` + `onPlaceClick`），但卡片 UI 未建
+
+### 关键文件当前结构
+
+```
+mapper.js  →  _earth._gestureRotSpeed / _gesturePitchDelta / _gestureZoomSpeed
+earth.js   →  _animate() 读上述值，×0.25 补偿，×0.96 衰减，飞行期间 !_flyStart 守卫
+camera.js  →  captureFrame() _inferencing 门卫 + skipCount > 3 脱困
+```
+
+### 下一步优先
+
+1. 手机端粒子频闪 → 检测移动端跳过 `_backMeshes`（方案已定，未实现）
+2. 手势展开卡片详情 → 接 `onPlaceClick` 回调弹 UI
+3. 粒子 LOD → shader 背面密度控制或离散 LOD 切换
