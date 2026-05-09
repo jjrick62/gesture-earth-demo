@@ -1,5 +1,5 @@
 // ===== 手势→控制映射（带缓动） =====
-import { SENS, DECAY_CAMERA, DECAY_ZOOM, GAIN_ROTATE, GAIN_PITCH, GAIN_ZOOM } from './constants.js';
+import { SENS, DECAY_CAMERA, DECAY_ZOOM, GAIN_ROTATE, GAIN_PITCH, GAIN_ZOOM, ZOOM_GAIN } from './constants.js';
 
 let _earth=null, _lp=null, _sens=SENS.ROTATE;
 let _rotV=0, _pitchV=0, _zoomV=0;  // 旋转、俯仰、缩放的速度累积
@@ -16,7 +16,14 @@ export function step(cls){
   let s='i',a='';
 
   if(g==='palm'){
+    // === 手掌张开：旋转 + 俯仰 ===
     s='r'; a='旋转';
+    // 如果正聚焦某个地点 → 退出聚焦，回地心视角
+    if (_earth._focusedPlaceId) {
+      _earth.resetView();
+      _earth._focusedPlaceId = null;
+      document.getElementById('detail-card').classList.add('hidden');
+    }
     _earth.rotating=false;
     _earth._controlsLocked = true;
     _zoomV=0;
@@ -33,18 +40,35 @@ export function step(cls){
       }
     }
     _lp=c;
+  }else if(g==='pinch'){
+    // === 捏合：缩放（追踪手部 Y 轴移动，与旋转同模式） ===
+    s='pi'; a='捏合缩放';
+    _earth._pinchRecovery = 5;  // 松手恢复标记（main.js 消费）
+    _earth.rotating=false;
+    _earth._controlsLocked = true;
+    _rotV=0; _pitchV=0;
+    if(_lp){
+      const dy=c.y-_lp.y;
+      _zoomV += -dy * _sens * ZOOM_GAIN; // 手上移→拉近
+      _zoomV = clamp(_zoomV, -0.3, 0.3);
+      _zoomV *= DECAY_CAMERA;
+      _earth._gestureZoomSpeed = _zoomV;
+    }
+    _lp=c;
   }else{
+    // === 其他手势 ===
     _rotV=0; _pitchV=0; _lp=null;
-    // _gestureRotSpeed / _gesturePitchDelta 不清零，由 earth._animate() 自然衰减刹车
     _earth._controlsLocked = false;
+    _earth._gestureCardNext = false;
+    _earth._gestureCardPrev = false;
     if(g==='pointUp'){
-      s='pu'; a='🔍 放大';
-      _zoomV += GAIN_ZOOM;
-      _zoomV = clamp(_zoomV, -0.3, 0.3);
+      s='pu'; a='下一张';
+      _earth._gestureCardNext = true;
+      _zoomV=0;
     }else if(g==='pointDown'){
-      s='pd'; a='🔎 拉远';
-      _zoomV -= GAIN_ZOOM;
-      _zoomV = clamp(_zoomV, -0.3, 0.3);
+      s='pd'; a='上一张';
+      _earth._gestureCardPrev = true;
+      _zoomV=0;
     }else if(g==='fist'){
       s='f'; a='暂停'; _earth.rotating=false;
       _zoomV=0;

@@ -3,7 +3,7 @@ import { initCamera, isFPSLow, CameraError } from './camera.js';
 import { classify } from './gesture.js';
 import { init as initMap, step, adj, rst, getSens } from './mapper.js';
 import * as UI from './ui.js';
-import { init as initCard, syncPlaceCards, updatePlaceCards, showDetail } from './card.js';
+import { init as initCard, syncPlaceCards, updatePlaceCards, showDetail, navigateCard } from './card.js';
 
 let _earth=null, _run=false;
 
@@ -15,7 +15,7 @@ function fatal(msg){
   ov.style.display='flex'; ov.style.opacity='1';
 }
 
-let _fc=0;
+let _fc=0, _cardLocked=false;
 function loop(){
   if(!_run)return;
   _fc++;
@@ -28,6 +28,24 @@ function onFrame(pts){
   const cls=classify(pts);
   const st=step(cls);
   if(st)UI.upd(st);
+
+  // 卡片翻页去抖：锁在动作层，不碰手势分类
+  // 捏合松手恢复期 → 抑制卡片翻页（防松手误判成食指）
+  if (_earth._pinchRecovery > 0) {
+    _earth._pinchRecovery--;
+  }
+  // 手势离开食指 → 解锁，允许下次翻页
+  if (cls.gesture !== 'pointUp' && cls.gesture !== 'pointDown') {
+    _cardLocked = false;
+  }
+  // 卡片翻页：只在未锁 + 非恢复期 + 有翻页信号时触发
+  if (!_cardLocked && _earth._pinchRecovery === 0) {
+    if (_earth._gestureCardNext) {
+      navigateCard(+1); _earth._gestureCardNext = false; _cardLocked = true;
+    } else if (_earth._gestureCardPrev) {
+      navigateCard(-1); _earth._gestureCardPrev = false; _cardLocked = true;
+    }
+  }
 }
 
 async function init(){

@@ -35,6 +35,9 @@ export class Earth {
     this._gesturePitchDelta = 0;
     this._gestureZoomSpeed = 0;
     this._controlsLocked = false;
+    this._gestureCardNext = false;
+    this._gestureCardPrev = false;
+    this._pinchRecovery = 0;
     this._pitchDbg = 0;
 
     this._initScene();
@@ -132,6 +135,7 @@ export class Earth {
     const RADIUS = this.earthRadius * 1.003;
     const pts = [];
 
+    if (!geojson || !geojson.features) return;
     for (const feature of geojson.features) {
       const geom = feature.geometry;
       if (!geom) continue;
@@ -145,14 +149,17 @@ export class Earth {
       for (const line of lines) {
         for (let ci = 0; ci < line.length; ci += step) {
           const [lng, lat] = line[ci];
+          if (!isFinite(lng) || !isFinite(lat)) continue;
           const p = this._latLngToVec3(lat, lng, RADIUS);
           pts.push(p.x, p.y, p.z);
         }
         // 确保首尾点都在（闭合多边形需要）
         if (step > 1 && line.length > 1 && (line.length - 1) % step !== 0) {
           const [lng, lat] = line[line.length - 1];
-          const p = this._latLngToVec3(lat, lng, RADIUS);
-          pts.push(p.x, p.y, p.z);
+          if (isFinite(lng) && isFinite(lat)) {
+            const p = this._latLngToVec3(lat, lng, RADIUS);
+            pts.push(p.x, p.y, p.z);
+          }
         }
       }
     }
@@ -1054,10 +1061,10 @@ export class Earth {
       this._applyZoomLayer(this.cityPoints, distFromCenter, 2.2, 0.5, '_cityOpacity');
     }
 
-    // 县界懒加载 + 显隐 — 地心距 < 2.0
-    if (distFromCenter < 2.5 && !this.districtPoints && !this._districtsLoading) {
-      this.loadDistricts();
-    }
+    // 县界懒加载（暂时关闭——china_districts.geojson 未部署）
+    // if (distFromCenter < 2.5 && !this.districtPoints && !this._districtsLoading) {
+    //   this.loadDistricts();
+    // }
     if (this.districtPoints) {
       this._applyZoomLayer(this.districtPoints, distFromCenter, 2.0, 0.4, '_distOpacity');
     }

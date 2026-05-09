@@ -39,11 +39,11 @@ body {
   transform: scaleX(-1); /* 镜像 */
 }
 
-/* ===== 手势状态面板（右下） ===== */
+/* ===== 手势状态面板（摄像头上方，左下） ===== */
 #gesture-panel {
   position: fixed;
-  bottom: 1rem;
-  right: 1rem;
+  bottom: 8.75rem;  /* 摄像头 120px + 1rem + 0.25rem 间距 */
+  left: 1rem;
   z-index: 10;
   background: rgba(18, 18, 24, 0.94);
   border: 1px solid #333;

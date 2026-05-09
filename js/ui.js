@@ -1,4 +1,4 @@
-const LB={i:'—',r:'🖐 张开手掌',pu:'☝ 食指朝上',pd:'👇 食指朝下',f:'✊ 握拳'};
+const LB={i:'—',r:'🖐 张开手掌',pi:'🤏 捏合缩放',pu:'☝ 下一张',pd:'👇 上一张',f:'✊ 握拳'};
 
 export function upd(st){
   if(!st)return;

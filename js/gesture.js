@@ -45,15 +45,22 @@ export function classify(pts){
     }
   }
 
+  // 捏合判定：拇指尖到食指尖距离 ÷ 手掌大小
+  const pinchDist = d2(pts[4], pts[8]);
+  const pinchRatio = pinchDist / hs;
+  const isPinch = pinchRatio < 0.4;
+
+  // 优先级：palm > pointUp/Down > pinch > fist > none
   let g='none';
   if(extend>=4) g='palm';
   else if(idxExt&&curl>=3) g=idxUp?'pointUp':'pointDown';
+  else if(isPinch) g='pinch';
   else if(curl>=4) g='fist';
 
   _dbg++;
   if(_dbg%30===0){
-    console.log(`[gesture] ext:${extend} curl:${curl} idx:${idxExt} → ${g}`, ratios);
+    console.log(`[gesture] ext:${extend} curl:${curl} idx:${idxExt} pinch:${pinchRatio.toFixed(2)} → ${g}`, ratios);
   }
 
-  return {gesture:g, data:{center:{x:p.x,y:p.y}}};
+  return {gesture:g, data:{center:{x:p.x,y:p.y}, pinchRatio}};
 }

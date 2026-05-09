@@ -404,6 +404,24 @@ export function hideDetail() {
   document.getElementById('detail-card').classList.add('hidden');
 }
 
+/** 卡片翻页：+1 下一张，-1 上一张，循环 */
+export function navigateCard(direction) {
+  if (!_earth) return;
+  const places = Object.values(_earth._places);
+  if (places.length === 0) return;
+
+  // 找到当前聚焦的地点
+  const curId = _earth._focusedPlaceId;
+  let idx = curId ? places.findIndex(p => p.id === curId) : -1;
+  if (idx === -1) idx = 0;
+  else idx = (idx + direction + places.length) % places.length;
+
+  const target = places[idx];
+  _earth._focusedPlaceId = target.id;
+  _earth.highlightFill(target.id);
+  _earth.focusOnPlace(target.lat, target.lng, () => showDetail(target.id));
+}
+
 // ===== 事件绑定 =====
 
 function _bindEvents() {
