@@ -69,9 +69,13 @@ async function init(){
       _earth.focusOnPlace(place.lat, place.lng, () => showDetail(id));
     };
 
-    // 预置上海市示例
+    // 预置示例卡片
     _earth.setHome(31.2304, 121.4737, '上海市', '上海市');
     _earth.addPlace({id:'demo-shanghai',name:'上海市',fullName:'上海市·上海市',lat:31.2304,lng:121.4737,rating:5,photos:[]}, '#ffffff', 5);
+    _earth.addPlace({id:'demo-beijing',name:'北京市',fullName:'北京市·北京市',lat:39.9042,lng:116.4074,rating:5,photos:[]}, '#e0584b', 5);
+    _earth.addPlace({id:'demo-nanjing',name:'南京市',fullName:'江苏省·南京市',lat:32.0603,lng:118.7969,rating:4,photos:[]}, '#e0b84b', 4);
+    _earth.addPlace({id:'demo-losangeles',name:'洛杉矶',fullName:'美国·洛杉矶',lat:34.0522,lng:-118.2437,rating:4,photos:[]}, '#4b9ee0', 4);
+    _earth.addPlace({id:'demo-newyork',name:'纽约',fullName:'美国·纽约',lat:40.7128,lng:-74.0060,rating:5,photos:[]}, '#8b4be0', 5);
     syncPlaceCards();
 
     // 地图分层后台加载

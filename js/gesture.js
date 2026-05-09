@@ -26,7 +26,7 @@ export function classify(pts){
   const w=pts[WRIST], p=pts[PALM];
   const hs=d2(w,p)||0.02;
 
-  let extend=0, curl=0, idxExt=false, idxUp=false;
+  let extend=0, curl=0, idxExt=false, idxUp=false, idxDown=false;
   const ratios=[];
 
   for(const f of FINGERS){
@@ -39,10 +39,15 @@ export function classify(pts){
 
     if(straight)extend++;
     if(curled)curl++;
-    if(f.name==='index'&&straight){
-      idxExt=true;
-      idxUp=tip.y<mcp.y;
-    }
+    if(f.name==='index'&&straight) idxExt=true;
+  }
+
+  // 食指绝对方向检测（3D 向量归一化，避免捏合时微倾误判）
+  if (idxExt) {
+    const iTip=pts[8], iMcp=pts[5];
+    const dirY = (iTip.y - iMcp.y) / (d2(iTip, iMcp) || 0.01);
+    idxUp   = dirY < -0.5;   // 指向上方（MediaPipe Y=0 在顶部）
+    idxDown = dirY > 0.5;    // 指向下方
   }
 
   // 捏合判定：拇指尖到食指尖距离 ÷ 手掌大小
@@ -50,11 +55,12 @@ export function classify(pts){
   const pinchRatio = pinchDist / hs;
   const isPinch = pinchRatio < 0.4;
 
-  // 优先级：palm > pointUp/Down > pinch > fist > none
+  // 优先级：palm > pinch > pointUp/Down > fist > none
   let g='none';
   if(extend>=4) g='palm';
-  else if(idxExt&&curl>=3) g=idxUp?'pointUp':'pointDown';
   else if(isPinch) g='pinch';
+  else if(idxExt&&curl>=3&&idxUp) g='pointUp';
+  else if(idxExt&&curl>=3&&idxDown) g='pointDown';
   else if(curl>=4) g='fist';
 
   _dbg++;

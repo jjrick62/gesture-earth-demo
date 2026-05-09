@@ -298,13 +298,13 @@ export class Earth {
     const loadAsia = () => {
       if (this._adminLoadState.asia !== 'pending') return;
       this._loadRegion('admin1_asia', 'asia', {
-        color: 0xffffff, size: 0.85, opacity: 0.32,
+        color: 0xffffff, size: 0.85, opacity: 0.36,
       }, 'admin1AsiaPoints');
     };
     const loadRest = () => {
       if (this._adminLoadState.rest !== 'pending') return;
       this._loadRegion('admin1_eur_amer', 'rest', {
-        color: 0xffffff, size: 0.85, opacity: 0.24,
+        color: 0xffffff, size: 0.85, opacity: 0.32,
       }, 'admin1RestPoints');
     };
     if (this._priorityRegion === 'rest') { loadRest(); loadAsia(); }
@@ -1078,9 +1078,9 @@ export class Earth {
       if (this.admin1ChinaPoints)
         this.admin1ChinaPoints.material.opacity = breathe(this._chinaAdminOpacity || 0, 1.1);
       if (this.admin1AsiaPoints)
-        this.admin1AsiaPoints.material.opacity = breathe(this._asiaAdminOpacity || 0, 1.0);
+        this.admin1AsiaPoints.material.opacity = breathe(this._asiaAdminOpacity || 0, 1.05);
       if (this.admin1RestPoints)
-        this.admin1RestPoints.material.opacity = breathe(this._restAdminOpacity || 0, 0.9);
+        this.admin1RestPoints.material.opacity = breathe(this._restAdminOpacity || 0, 1.0);
       if (this.cityPoints)
         this.cityPoints.material.opacity = breathe(this._cityOpacity || 0, 1.0);
       if (this.districtPoints)
