@@ -25,6 +25,8 @@ export class Earth {
     this._placeFills = [];
     this._placeSprites = [];
     this._backMeshes = [];
+    this._isMobile = /Android|iPhone|iPad|iPod|webOS/i.test(navigator.userAgent) ||
+      (window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
     this._frameCallbacks = [];
     this._focusedPlaceId = null;
     this._gestureRotSpeed = 0;
@@ -176,14 +178,17 @@ export class Earth {
     this._sizedPoints.push({ mesh, baseSize: style.size });
 
     // 背面副本：同一几何体，depthFunc 反转，仅遮挡球后面的粒子可见
-    const backMat = mat.clone();
-    backMat.depthFunc = THREE.GreaterDepth;
-    const backMesh = new THREE.Points(geo, backMat);
-    backMesh.renderOrder = 0;
-    backMesh.visible = true;
-    this.earthGroup.add(backMesh);
-    this._backMeshes.push({ front: mesh, back: backMesh, factor: 0.35 });
-    this._sizedPoints.push({ mesh: backMesh, baseSize: style.size });
+    // 移动端跳过后半球粒子 — 16-bit 深度缓冲精度不足导致 z-fighting
+    if (!this._isMobile) {
+      const backMat = mat.clone();
+      backMat.depthFunc = THREE.GreaterDepth;
+      const backMesh = new THREE.Points(geo, backMat);
+      backMesh.renderOrder = 0;
+      backMesh.visible = true;
+      this.earthGroup.add(backMesh);
+      this._backMeshes.push({ front: mesh, back: backMesh, factor: 0.35 });
+      this._sizedPoints.push({ mesh: backMesh, baseSize: style.size });
+    }
 
     if (!skipFade) {
       mesh.material.opacity = 0;
