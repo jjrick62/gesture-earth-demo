@@ -2,6 +2,7 @@
 
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { DECAY_RENDER, DECAY_ZOOM, FREQ_RATIO } from './constants.js';
 
 export class Earth {
   constructor(container) {
@@ -24,6 +25,7 @@ export class Earth {
     this._placeDots = [];
     this._placeFills = [];
     this._placeSprites = [];
+    this._places = {};         // placeId → {id,name,fullName,lat,lng,rating,photos}
     this._backMeshes = [];
     this._isMobile = /Android|iPhone|iPad|iPod|webOS/i.test(navigator.userAgent) ||
       (window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
@@ -569,6 +571,7 @@ export class Earth {
     dot.scale.setScalar(baseScale);
     dot.userData = { placeId: place.id };
     this.earthGroup.add(dot);
+    this._places[place.id] = place;
     this._placeDots.push(dot);
     this._placeSprites.push({ sprite: dot, base: baseScale });
 
@@ -946,8 +949,8 @@ export class Earth {
     if (!this._flyStart) {
       // 旋转 Y 轴（×0.25 补偿 60fps vs 15fps 频次差）
       if (this._gestureRotSpeed && Math.abs(this._gestureRotSpeed) > 0.0001) {
-        this.earthGroup.rotation.y += this._gestureRotSpeed * 0.25;
-        this._gestureRotSpeed *= 0.96;
+        this.earthGroup.rotation.y += this._gestureRotSpeed * FREQ_RATIO;
+        this._gestureRotSpeed *= DECAY_RENDER;
         if (Math.abs(this._gestureRotSpeed) < 0.0001) this._gestureRotSpeed = 0;
       }
       // 俯仰（动量累积 + 60fps 平滑衰减，同旋转机制）
@@ -955,13 +958,13 @@ export class Earth {
         const cam = this.camera.position;
         const curDist = cam.length();
         const phi = Math.max(0.1, Math.min(Math.PI - 0.1,
-          Math.acos(cam.y / curDist) + this._gesturePitchDelta * 0.25));
+          Math.acos(cam.y / curDist) + this._gesturePitchDelta * FREQ_RATIO));
         cam.y = curDist * Math.cos(phi);
         const rd = curDist * Math.sin(phi);
         const az = Math.atan2(cam.z, cam.x);
         cam.x = rd * Math.cos(az);
         cam.z = rd * Math.sin(az);
-        this._gesturePitchDelta *= 0.96;
+        this._gesturePitchDelta *= DECAY_RENDER;
         if (Math.abs(this._gesturePitchDelta) < 0.0001) this._gesturePitchDelta = 0;
       }
       // 缩放
@@ -974,7 +977,7 @@ export class Earth {
         const newDist = cur + (target - cur) * 0.3;
         const sc = Math.max(mn, Math.min(mx, newDist)) / cur;
         cam.x *= sc; cam.y *= sc; cam.z *= sc;
-        this._gestureZoomSpeed *= 0.9;
+        this._gestureZoomSpeed *= DECAY_ZOOM;
         if (Math.abs(this._gestureZoomSpeed) < 0.001) this._gestureZoomSpeed = 0;
       }
     }

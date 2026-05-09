@@ -121,3 +121,114 @@ body {
   color: #fff;
   transition: opacity 0.3s;
 }
+
+/* ===== SVG 连接线 ===== */
+#connector-lines {
+  position: fixed; inset: 0; z-index: 5; pointer-events: none;
+}
+#connector-lines line {
+  stroke: rgba(255,255,255,0.25);
+  stroke-width: 1;
+}
+
+/* ===== 3D 悬浮卡片 ===== */
+#place-cards {
+  position: fixed; inset: 0; z-index: 6; pointer-events: none;
+}
+.place-card {
+  position: absolute;
+  pointer-events: auto;
+  background: rgba(14,14,20,0.1);
+  border: 1px solid #333;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.625rem;
+  color: #ccc;
+  font-size: 0.75rem;
+  cursor: pointer;
+  min-width: 8.75rem;
+  max-width: 12.5rem;
+  backdrop-filter: blur(8px);
+}
+.place-card:hover { border-color: #666; }
+.place-card-stacked::before,
+.place-card-stacked::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 0.5rem;
+  background: rgba(14,14,20,0.1);
+  border: 1px solid #333;
+  z-index: -1;
+  pointer-events: none;
+}
+.place-card-stacked::before { transform: translate(0.25rem, -0.25rem); }
+.place-card-stacked::after  { transform: translate(0.5rem, -0.5rem); }
+.place-card-name { color: #fff; font-size: 0.8125rem; font-weight: 500; margin-bottom: 2px; }
+.place-card-meta { color: #888; font-size: 0.6875rem; }
+.place-card-thumb {
+  width: 100%; height: 3.75rem; object-fit: cover; border-radius: 0.25rem; margin-top: 0.25rem;
+}
+
+/* ===== 详情卡片 ===== */
+.detail-card {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 20;
+  width: clamp(18rem, 25vw, 22rem);
+  max-height: 70vh;
+  background: rgba(16, 16, 22, 0.96);
+  border: 1px solid #333;
+  border-radius: 0.625rem;
+  backdrop-filter: blur(16px);
+  overflow-y: auto;
+  animation: slideIn 0.25s ease;
+}
+.detail-card.hidden { display: none; }
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.125rem 1.25rem 0;
+}
+.detail-header h2 { font-size: 1.0625rem; color: #fff; font-weight: 500; }
+
+.btn-close {
+  background: none; border: none; color: #888; font-size: 1.25rem;
+  cursor: pointer; line-height: 1;
+}
+.btn-close:hover { color: #fff; }
+
+.detail-body { padding: 0.875rem 1.25rem 1.125rem; }
+
+.detail-fullname {
+  font-size: 0.75rem; color: #666; margin-bottom: 0.625rem;
+}
+.detail-stars {
+  font-size: 0.875rem; color: #f0c040; letter-spacing: 0.125rem; margin-bottom: 0.5rem;
+}
+.detail-coords {
+  font-size: 0.6875rem; color: #555;
+}
+
+/* ===== 响应式 ===== */
+@media (max-width: 479px) {
+  .place-card {
+    padding: 0.375rem 0.5rem; min-width: 6rem; max-width: 9rem;
+  }
+  .place-card-name { font-size: 0.6875rem; }
+  .place-card-meta { font-size: 0.625rem; }
+  .place-card-thumb { height: 2.5rem; }
+  .place-card-stacked::before,
+  .place-card-stacked::after { display: none; }
+
+  .detail-card {
+    bottom: 0.75rem; right: 0.75rem; width: calc(100vw - 1.5rem); max-width: none;
+  }
+}

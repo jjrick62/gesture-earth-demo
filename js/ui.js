@@ -20,3 +20,8 @@ export function err(msg,sev){
   if(sev==='warn'){clearTimeout(e._t);e._t=setTimeout(()=>{e.style.display='none'},3000);}
 }
 export function errClr(){const e=document.getElementById('error-msg');if(e)e.style.display='none';}
+
+export function updSens(val){
+  const e=document.getElementById('sensitivity-display');
+  if(e)e.textContent='灵敏度 '+(val||0).toFixed(4);
+}

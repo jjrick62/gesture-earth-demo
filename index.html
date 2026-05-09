@@ -44,6 +44,23 @@
     </div>
   </div>
 
+  <!-- 3D 地点悬浮卡片覆盖层 -->
+  <svg id="connector-lines"></svg>
+  <div id="place-cards"></div>
+
+  <!-- 地点详情卡片 -->
+  <div id="detail-card" class="detail-card hidden">
+    <div class="detail-header">
+      <h2 id="detail-name"></h2>
+      <button id="btn-close-detail" class="btn-close">&times;</button>
+    </div>
+    <div class="detail-body">
+      <div id="detail-fullname" class="detail-fullname"></div>
+      <div id="detail-stars" class="detail-stars"></div>
+      <div id="detail-coords" class="detail-coords"></div>
+    </div>
+  </div>
+
   <script type="importmap">
   {
     "imports": {

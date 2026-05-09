@@ -1,5 +1,5 @@
 // ===== 手势→控制映射（带缓动） =====
-import { SENS } from './constants.js';
+import { SENS, DECAY_CAMERA, DECAY_ZOOM, GAIN_ROTATE, GAIN_PITCH, GAIN_ZOOM } from './constants.js';
 
 let _earth=null, _lp=null, _sens=SENS.ROTATE;
 let _rotV=0, _pitchV=0, _zoomV=0;  // 旋转、俯仰、缩放的速度累积
@@ -22,11 +22,11 @@ export function step(cls){
     _zoomV=0;
     if(_lp){
       const dx=c.x-_lp.x, dy=c.y-_lp.y;
-      _rotV += -dx*_sens*80;
-      _rotV *= 0.85;
+      _rotV += -dx*_sens*GAIN_ROTATE;
+      _rotV *= DECAY_CAMERA;
       _earth._gestureRotSpeed = _rotV;
-      _pitchV += -dy * _sens * 50;
-      _pitchV *= 0.85;
+      _pitchV += -dy * _sens * GAIN_PITCH;
+      _pitchV *= DECAY_CAMERA;
       _earth._gesturePitchDelta = _pitchV;
       if (++_earth._pitchDbg % 30 === 0) {
         console.log(`[mapper] dx=${dx.toFixed(4)} dy=${dy.toFixed(4)} sens=${_sens.toFixed(5)} rotSpeed=${_rotV.toFixed(6)} pitchDelta=${_earth._gesturePitchDelta.toFixed(6)}`);
@@ -39,11 +39,11 @@ export function step(cls){
     _earth._controlsLocked = false;
     if(g==='pointUp'){
       s='pu'; a='🔍 放大';
-      _zoomV += 0.02;
+      _zoomV += GAIN_ZOOM;
       _zoomV = clamp(_zoomV, -0.3, 0.3);
     }else if(g==='pointDown'){
       s='pd'; a='🔎 拉远';
-      _zoomV -= 0.02;
+      _zoomV -= GAIN_ZOOM;
       _zoomV = clamp(_zoomV, -0.3, 0.3);
     }else if(g==='fist'){
       s='f'; a='暂停'; _earth.rotating=false;
@@ -52,8 +52,10 @@ export function step(cls){
       s='i'; a='—'; _earth.rotating=true;
     }
     _earth._gestureZoomSpeed = _zoomV;
-    _zoomV *= 0.9;
+    _zoomV *= DECAY_ZOOM;
   }
 
   return {s,a};
 }
+
+export function getSens() { return _sens; }

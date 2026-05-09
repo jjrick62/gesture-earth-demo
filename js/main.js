@@ -1,8 +1,9 @@
 import { Earth } from './earth.js';
 import { initCamera, isFPSLow, CameraError } from './camera.js';
 import { classify } from './gesture.js';
-import { init as initMap, step, adj, rst } from './mapper.js';
+import { init as initMap, step, adj, rst, getSens } from './mapper.js';
 import * as UI from './ui.js';
+import { init as initCard, syncPlaceCards, updatePlaceCards, showDetail } from './card.js';
 
 let _earth=null, _run=false;
 
@@ -40,13 +41,28 @@ async function init(){
     const t=Math.max(0,Math.min(1,(1.6-asp)/1.2));
     _earth.camera.position.set(0,1.5+t*2.0,3.5+t*2.0);
     _earth.start();
+    // 卡片系统初始化
+    initCard(_earth);
+    _earth.onPlaceClick = (id) => {
+      const place = _earth._places[id];
+      if (!place) return;
+      _earth._focusedPlaceId = id;
+      _earth.highlightFill(id);
+      _earth.focusOnPlace(place.lat, place.lng, () => showDetail(id));
+    };
+
     // 预置上海市示例
     _earth.setHome(31.2304, 121.4737, '上海市', '上海市');
     _earth.addPlace({id:'demo-shanghai',name:'上海市',fullName:'上海市·上海市',lat:31.2304,lng:121.4737,rating:5,photos:[]}, '#ffffff', 5);
+    syncPlaceCards();
+
     // 地图分层后台加载
     _earth.loadCoastlines().catch(()=>{});
     _earth.loadAdminBoundaries().catch(()=>{}); // 省界
     _earth.loadCities().catch(()=>{});          // 市界（省级加载完成后缩放即可见）
+
+    // 每帧更新卡片屏幕位置
+    _earth.onFrame(() => updatePlaceCards());
   }catch(e){fatal(e.message);return;}
 
   // 映射器
@@ -64,12 +80,12 @@ async function init(){
 
   // 键盘
   document.addEventListener('keydown',e=>{
-    if(e.key==='='||e.key==='+')adj(1);
-    else if(e.key==='-')adj(-1);
-    else if(e.key==='r'||e.key==='R')rst();
+    if(e.key==='='||e.key==='+'){ adj(1); UI.updSens(getSens()); }
+    else if(e.key==='-'){ adj(-1); UI.updSens(getSens()); }
+    else if(e.key==='r'||e.key==='R'){ rst(); UI.updSens(getSens()); }
   });
 
-  UI.hideLoad(); _run=true; requestAnimationFrame(loop);
+  UI.hideLoad(); UI.updSens(getSens()); _run=true; requestAnimationFrame(loop);
 }
 
 init();
