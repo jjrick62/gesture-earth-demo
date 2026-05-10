@@ -1,132 +1,158 @@
+# 会话交接 — 2026-05-10
+
+## 全日成果
+
+### 一、卡片管理控制台（从旅行相册完整搬运）
+
+**搬运原则**：DOM 结构、CSS 样式、事件逻辑全部从旅行相册原样搬运，仅 API 层从 REST 调用改为 localStorage（后又换回 REST API + 搬运后端）。
+
+**改动文件**：
+- `index.html` — 编辑弹窗 `#add-modal`（城市搜索/日期/评分/感想/照片）、详情卡 `#detail-card`（照片网格/编辑删除按钮）、认证弹窗 `#auth-modal`、右上角 `+` 按钮
+- `css/style.css` — 从旅行相册完整搬运：模态框、表单、搜索、星星、照片网格、响应式，保留手势相关样式
+- `js/console.js` — 新建 ~400 行：`openEditModal` / `_savePlace` / `_deleteFromModal` / 城市搜索 / 照片管理 / 认证流程 / 事件绑定
+- `js/api.js` — 从旅行相册直接复制（REST API 客户端，JWT token 管理）
+- `js/card.js` — `showDetail` 换为旅行相册版（可点击星星评分 + 照片网格 + 感想 + 编辑/删除按钮）
+- `js/card.js` — `createPlaceCard` 星星内联生成（移除 `renderStars` 依赖）
+- `data/cities.json` — 423KB，3000+ 中国城市数据
+- `js/main.js` — 移除硬编码 demo 城市，改为 `initConsole(_earth)`
+
+### 二、FastAPI 后端（从旅行相册完整搬运）
+
+```
+backend/
+├── main.py          # FastAPI + CORS（8082）+ lifespan
+├── config.py        # SECRET_KEY / DATABASE_URL / UPLOAD_DIR / CORS
+├── database.py      # SQLAlchemy async + aiosqlite
+├── models.py        # User / Place / Photo / UserMeta 四表
+├── schemas.py       # Pydantic 请求/响应模型
+├── auth.py          # bcrypt + JWT（python-jose）
+├── storage.py       # aiofiles 照片文件存取
+├── requirements.txt # 8 个依赖
+└── routers/
+    ├── auth.py      # register / login / me
+    ├── places.py    # CRUD /api/places
+    ├── photos.py    # upload / serve（无认证⚠️） / delete
+    └── meta.py      # GET/PUT /api/meta
+```
+
+- 照片存储：`uploads/{user_id}/{place_id}/{uuid}.jpg`
+- 认证：JWT 7 天过期，bcrypt，每请求校验 `user_id` 所有权
+- 数据隔离：Photo → Place → User，所有查询带 `user_id` 过滤
+- 启动：`start.bat` 自动 pip install + uvicorn :8000 + http-server :8082
+
+### 三、earth.js 改动
+
+- **`removePlace(id)`** — 清理 sprite/fill/clickMesh/visitedClusters + delete `_places[id]`
+- **`_onDataReady`** — `loadAdminBoundaries` 省界加载完后也触发回调（之前只有 `loadCities` 触发）
+- **填充轮廓修复** — console.js 挂 `_onDataReady`，地图数据就绪后无填充的地点自动 `removePlace` + `addPlace` 重建
+
+### 四、国际城市支持
+
+- 模态框新增经纬度手动输入框
+- 搜索提示词改为"搜索中国城市，或直接输入国际城市名称..."
+- 保存逻辑三路径：下拉选中 → 数据库匹配 → 手动坐标输入
+
+### 五、安全审计
+
+完成全量 26 项安全审查，详见 `.claude/SECURITY_SCHEDULE.md`：
+- **严重 2 项**：存储型 XSS（card.js:48 innerHTML）、DOM XSS（main.js:15 fatal 函数）
+- **高危 8 项**：默认 JWT 密钥、路径遍历、上传无限制、照片无认证、无频率限制、无暴力破解防护、无邮箱验证、无 CSP
+- 已按三阶段排期：紧急修复 8 项（2h）→ 业务安全 7 项（3h）→ 架构加固 11 项（4h）
+
 ---
-name: 2026-05-08 会话交接
-description: 今日完整进度摘要——给下一个 Agent 的上下文
-type: project
-originSessionId: 0d1b3193-d037-4d84-9690-c16a7f4713ea
----
-# 2026-05-08 会话产物总览
 
-## 三个活跃仓库
+## 当前状态
 
-| 仓库 | 分支 | Pages | 用途 |
-|---|---|---|---|
-| `jjrick62/travel-album-3d` | `master` | — | 旅行相册后端版（FastAPI+SQLite） |
-| `jjrick62/travel-album-3d` | `static` | `jjrick62.github.io/travel-album-3d` | 纯静态版（IndexedDB，含上海市示例） |
-| `jjrick62/jjrick62.github.io` | `master` | `jjrick62.github.io` | 顶级域名，完整旅行相册静态版 |
-| `jjrick62/gesture-earth-demo` | `master` | `jjrick62.github.io/gesture-earth-demo` | 手势控制 3D 地球 Demo |
+### 数据流
 
-## 一、旅行相册主项目（D:\大学作业文件夹\自制软件\旅行相册\）
-
-### 前端改进（两个分支都有）
-- `js/logger.js` — 点击日志工具。F12 控制台：`logEvents()`、`logClear()`、`logExport()`、`logToggle()`
-- 摄像机初始高度：根据屏幕宽高比连续计算（`aspect → t → camY/camZ`），不再三档硬切
-- 拖拽地球时：取消飞行动画 + target 切回地心 (0,0,0) + 恢复 savedMinDist
-- 全局点击：非交互区域 → 关闭详情卡片 + 回退视角
-- `.gitignore` 加了 `backend/travel_album.db`、`backend/uploads/`、`__pycache__/`
-
-### 后端（仅 master 分支）
-- `backend/` 目录：FastAPI + SQLite + JWT 认证
-- 文件：`main.py`、`config.py`、`database.py`、`models.py`、`schemas.py`、`auth.py`、`storage.py`、`routers/auth.py`、`routers/places.py`、`routers/photos.py`、`routers/meta.py`
-- 数据模型：User → Place → Photo + UserMeta
-- API：`/api/auth/register`、`/api/auth/login`、`/api/places` CRUD、`/api/photos` 上传/下载、`/api/meta`
-- 照片：不再 base64 存 IndexedDB，改为文件系统存储（`uploads/{user_id}/{place_id}/{uuid}.jpg`）
-- 前端对应：`js/api.js`（替代 `js/data.js`），接口签名相同，HTTP fetch 替代 IndexedDB
-- 认证 UI：登录/注册模态框 + 退出登录按钮
-- 数据迁移工具：`migrate.html`（IndexedDB → 后端 API）
-
-### 启动后端
-```bash
-cd D:\大学作业文件夹\自制软件\旅行相册\backend
-python -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ```
-
-### 启动前端
-```bash
-cd D:\大学作业文件夹\自制软件\旅行相册
-npx http-server . -p 8081 -c-1
+浏览器 ──REST──> FastAPI :8000 ──SQLAlchemy──> SQLite (backend/travel_album.db)
+                      │
+                      └── 照片 ──> uploads/{user}/{place}/{uuid}.jpg
 ```
-
-### 微信域名验证
-文件 `212e3fd15abb06ec3f3fbff169f2fa13.txt` 放在 `jjrick62.github.io` 顶级仓库根目录。
-
-## 二、手势 Demo（D:\大学作业文件夹\自制软件\gesture-earth-demo\）
-
-### 架构
-```
-摄像头 → MediaPipe HandLandmarker → gesture.js（分类）→ mapper.js（映射）→ earth.js（控制）
-```
-
-### 关键文件
-- `js/gesture.js` — 手势分类，纯硬规则，尺度无关比例判定。**成果物，不要再改了**
-- `js/mapper.js` — 状态映射，带缓动惯性
-- `js/camera.js` — 摄像头 + MediaPipe，使用 `@mediapipe/tasks-vision`（新版 API）
-- `js/earth.js` — 从主项目复制
-
-### gesture.js 核心逻辑（接手者必读）
-- **伸直判定**：PIP→指尖 与 PIP→MCP 向量夹角余弦。**注意 cos < -0.7（不是 > 0.7）**，因为两向量反向
-- **弯曲判定**：指尖→掌心距 ÷ 手腕→掌心距 < 0.6。比例判定，尺度无关
-- **决策树**：≥4 指伸直=palm → 食指伸直+≥3 其余弯曲=pointUp/pointDown → ≥4 弯曲=fist → 其余=none
-- **上下方向**：指尖 y < MCP y = pointUp（MediaPipe y=0 在顶部）
-
-### mapper.js 核心逻辑
-- palm：手掌移动→旋转地球（镜像+20倍率+惯性缓动），自转关闭
-- pointUp：持续拉近
-- pointDown：持续拉远
-- fist：暂停自转
-- none：恢复自转
-- 缩放和旋转都有缓动衰减
-
-### 当前手势映射
-| 手势 | 动作 |
-|---|---|
-| 🖐 张开手掌移动 | 旋转地球 |
-| ☝ 食指朝上 | 拉近放大 |
-| 👇 食指朝下 | 拉远缩小 |
-| ✊ 握拳 | 暂停自转 |
 
 ### 启动
-```bash
+
+```bat
 cd D:\大学作业文件夹\自制软件\gesture-earth-demo
-npx http-server . -p 8082 -c-1
-# 浏览器 http://localhost:8082，允许摄像头
+start.bat
 ```
 
-### 预置数据
-上海市示例：`earth.setHome(31.2304, 121.4737, '上海市', '上海市')` + `earth.addPlace(...)`
+### API 端点
 
-### 已知问题
-1. 手机端性能未优化
-2. 缺少手势展开卡片详情功能
-3. 省市级地图首次加载需等待（已在后台预加载 coastlines + adminBoundaries + cities）
+| 方法 | 路径 | 认证 |
+|------|------|:--:|
+| POST | `/api/auth/register` | 否 |
+| POST | `/api/auth/login` | 否 |
+| GET | `/api/places` | 是 |
+| POST | `/api/places` | 是 |
+| PUT | `/api/places/{id}` | 是 |
+| DELETE | `/api/places/{id}` | 是 |
+| POST | `/api/photos/places/{id}` | 是 |
+| GET | `/api/photos/file/{path}` | **否⚠️** |
+| DELETE | `/api/photos/{id}` | 是 |
+| GET | `/api/meta` | 是 |
 
-## 三、关键技术教训
+### 手势管线（未改动）
 
-### 血泪教训（接手者牢记）
-1. **`cos < -0.7` 判伸直，不是 `> 0.7`** — 这个 bug 从初版 classifier.js 就存在，所有分类失败最终都源于此。PIP→指尖朝外，PIP→MCP 朝掌心，两向量反向，cos 是负值
-2. **绝对距离阈值不可靠** — `Math.hypot(pt.x-m.x, pt.y-m.y) < 0.25` 依赖手在画面中的大小，远近不同判出来不同。必须用比例
-3. **MediaPipe HandLandmarker（tasks-vision API）的 `visibility` 永远为 0** — 新 API 不输出逐点置信度，老代码里 `(landmarks[i].visibility ?? 1) > 0.7` 这种门控全废
-4. **`detectForVideo` 在新 API 是同步返回结果** — `const result = _hands.detectForVideo(_video, now); onHandsResults(result)`，不是回调模式
-5. **`estimate()` 返回 `{gestures: [...]}` 不是数组** — fingerpose 踩过这个坑
-6. **fingerpose 最终被弃用** — 手势不多时，纯硬规则更可控
+```
+gesture.js ──→ mapper.js ──→ earth.js (_animate 60fps)
+    │               │
+    │ 优先级:        └──→ main.js onFrame → card.js navigateCard
+    │ palm > pinch >       动作去抖: _cardLocked + _pinchRecovery
+    │ pointUp > fist
+```
 
-### 踩过的坑（知道即可，不必重复）
-- fingerpose CDN 的 ESM 版不存在，只能用 UMD + 全局 `fp` 对象
-- fingerpose `addDirection` 在摄像头镜像+MediaPipe 坐标系下方向判不准
-- fingerpose 加权匹配在两手势相近时结果不稳定（fist vs point），不如硬规则互斥判定
-- `world_admin1.geojson`（17MB）和 `china_cities.geojson`（3.3MB）需要手动复制到 demo
+### 关键文件行号速查
 
-## 四、下一个 Agent 的优先任务
+| 文件 | 内容 | 行号 |
+|------|------|:--:|
+| `js/console.js` | `openEditModal` | 161 |
+| `js/console.js` | `_savePlace`（API 版） | 217 |
+| `js/console.js` | `_doInit` / `_applyPlaces` | 82 |
+| `js/console.js` | `_bindAuthEvents` | 298 |
+| `js/card.js` | `showDetail`（旅行相册版） | 382 |
+| `js/card.js` | `_renderDetailPhotos` | 423 |
+| `js/card.js` | `createPlaceCard`（⚠️ XSS 漏洞） | 43 |
+| `js/earth.js` | `removePlace` | 666 |
+| `js/earth.js` | `_onDataReady` 触发点 | 289, 349 |
+| `backend/storage.py` | 路径遍历漏洞 | 24, 30 |
+| `backend/config.py` | 默认密钥 | 3 |
+| `js/main.js` | fatal() XSS 漏洞 | 15 |
 
-1. **性能优化** — 手机端帧率低：降低 MediaPipe 输入分辨率、减少粒子数、FPS 自适应降级
-2. **手势功能扩展** — 手势展开地点详情卡片、手势切换图层
-3. **可选** — Vue/React 框架化（如果用户决定）
+---
 
-## 五、用户偏好速查
+## 明天任务（按优先级）
 
-- 自称"洒家"，水浒腔调
-- 大数据专业大二，做项目出于兴趣+简历
-- 工具装 D:\tool，别塞 C 盘
-- GitHub: `jjrick62`，token 在 `C:\Users\lenovo\.claude\mcp.json`；推送完擦 remote URL 里的 token
-- 每个项目独立建 GitHub 仓库
-- 默认项目目录：`D:\大学作业文件夹\自制软件\`
-- 操作前先说清楚再动手
+### 1. 安全修复第一阶段（必须先做，详见 `.claude/SECURITY_SCHEDULE.md`）
+
+| 顺序 | 文件 | 问题 | 方案 |
+|:--:|------|------|------|
+| 1 | `card.js:48` | innerHTML XSS | → DOM API + textContent |
+| 2 | `main.js:15` | fatal() DOM XSS | → textContent |
+| 3 | `storage.py:24,30` | 路径遍历 | normpath + 前缀校验 |
+| 4 | `config.py:3` | 默认密钥 | 启动时检查环境变量 |
+| 5 | `routers/photos.py:30` | 上传无校验 | 大小+MIME 检查 |
+| 6 | `index.html` | 无 CSP | 加 `<meta>` 标签 |
+| 7 | `console.js:177` | 搜索 innerHTML | → DOM API |
+| 8 | `schemas.py:8` | 弱密码 | `Field(min_length=8)` |
+
+### 2. 功能搬运（旅行相册有，尚未搬）
+- 照片查看器（`openPhotoViewer` + 翻页）
+- 地点总览列表（`renderOverview`）
+
+### 3. 体验优化
+- `china_districts.geojson` 23MB 部署
+- 移动端触摸优化
+
+---
+
+## 已知局限
+
+- **SQLite 不适合并发**，多用户同时写会锁表，仅适合单用户 demo
+- **照片服务无认证**（`/api/photos/file/{path}`），任何人拿到 URL 即可访问
+- **JWT 默认密钥不安全**，上线必须设环境变量
+- **无 HTTPS**，生产需 nginx 反代 + 证书
+- **Three.js CDN 无 SRI**，CDN 被劫持即可注入恶意代码
+- `_onDataReady` 可能触发两次，有 hasFill 守卫，无害但浪费
+- 手势 demo 的悬浮卡片双击行为与旅行相册不同（旅行相册双击进编辑，demo 双击进详情）
