@@ -286,7 +286,10 @@ export class Earth {
         this._geoJSONToParticles(data, style, meshKey, true);
       }
       this._adminLoadState[region] = 'loaded';
-      if (region === 'china') this._createHomeFill();
+      if (region === 'china') {
+        this._createHomeFill();
+        if (this._onDataReady) this._onDataReady();
+      }
     } catch (err) {
       console.warn(`[earth] ${fileName} load failed:`, err);
       this._adminLoadState[region] = 'pending';
@@ -655,6 +658,58 @@ export class Earth {
     this.clickMeshes.push(clickMesh);
 
     return dot;
+  }
+
+  // ===== 移除地点 =====
+  removePlace(id) {
+    const place = this._places[id];
+    if (!place) return;
+
+    // 清理光点 sprite
+    for (let i = this._placeDots.length - 1; i >= 0; i--) {
+      if (this._placeDots[i].userData.placeId === id) {
+        this.earthGroup.remove(this._placeDots[i]);
+        this._placeDots.splice(i, 1);
+      }
+    }
+    // 清理 _placeSprites
+    for (let i = this._placeSprites.length - 1; i >= 0; i--) {
+      if (this._placeSprites[i].sprite.userData.placeId === id) {
+        this._placeSprites.splice(i, 1);
+      }
+    }
+    // 清理填充粒子
+    for (let i = this._placeFills.length - 1; i >= 0; i--) {
+      const f = this._placeFills[i];
+      if (f.mesh && f.mesh.userData.placeId === id) {
+        this.earthGroup.remove(f.mesh);
+        if (f.mesh.geometry) f.mesh.geometry.dispose();
+        if (f.mesh.material) f.mesh.material.dispose();
+        this._placeFills.splice(i, 1);
+      }
+    }
+    // 清理点击检测球
+    for (let i = this.clickMeshes.length - 1; i >= 0; i--) {
+      if (this.clickMeshes[i].userData.placeId === id) {
+        this.earthGroup.remove(this.clickMeshes[i]);
+        this.clickMeshes[i].geometry.dispose();
+        this.clickMeshes[i].material.dispose();
+        this.clickMeshes.splice(i, 1);
+      }
+    }
+    // 清理 visitedClusters
+    for (let i = this.visitedClusters.length - 1; i >= 0; i--) {
+      if (this.visitedClusters[i].userData && this.visitedClusters[i].userData.placeId === id) {
+        this.visitedClusters.splice(i, 1);
+      }
+    }
+    // 清除聚焦状态
+    if (this._focusedPlaceId === id) {
+      this._focusedPlaceId = null;
+      this.clearHighlight();
+    }
+
+    delete this._places[id];
   }
 
   // ===== 弧线 =====

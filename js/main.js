@@ -3,7 +3,8 @@ import { initCamera, isFPSLow, CameraError } from './camera.js';
 import { classify } from './gesture.js';
 import { init as initMap, step, adj, rst, getSens } from './mapper.js';
 import * as UI from './ui.js';
-import { init as initCard, syncPlaceCards, updatePlaceCards, showDetail, navigateCard } from './card.js';
+import { init as initCard, updatePlaceCards, showDetail, navigateCard } from './card.js';
+import { initConsole } from './console.js';
 
 let _earth=null, _run=false;
 
@@ -69,14 +70,8 @@ async function init(){
       _earth.focusOnPlace(place.lat, place.lng, () => showDetail(id));
     };
 
-    // 预置示例卡片
-    _earth.setHome(31.2304, 121.4737, '上海市', '上海市');
-    _earth.addPlace({id:'demo-shanghai',name:'上海市',fullName:'上海市·上海市',lat:31.2304,lng:121.4737,rating:5,photos:[]}, '#ffffff', 5);
-    _earth.addPlace({id:'demo-beijing',name:'北京市',fullName:'北京市·北京市',lat:39.9042,lng:116.4074,rating:5,photos:[]}, '#e0584b', 5);
-    _earth.addPlace({id:'demo-nanjing',name:'南京市',fullName:'江苏省·南京市',lat:32.0603,lng:118.7969,rating:4,photos:[]}, '#e0b84b', 4);
-    _earth.addPlace({id:'demo-losangeles',name:'洛杉矶',fullName:'美国·洛杉矶',lat:34.0522,lng:-118.2437,rating:4,photos:[]}, '#4b9ee0', 4);
-    _earth.addPlace({id:'demo-newyork',name:'纽约',fullName:'美国·纽约',lat:40.7128,lng:-74.0060,rating:5,photos:[]}, '#8b4be0', 5);
-    syncPlaceCards();
+    // 卡片管理控制台（内部处理 localStorage 加载 / demo 初始化）
+    initConsole(_earth);
 
     // 地图分层后台加载
     _earth.loadCoastlines().catch(()=>{});

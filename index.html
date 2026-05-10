@@ -14,7 +14,7 @@
   <!-- 摄像头实时画面小窗 -->
   <video id="camera-window" autoplay playsinline muted></video>
 
-  <!-- 手势状态面板（右下） -->
+  <!-- 手势状态面板（摄像头上方，左下） -->
   <div id="gesture-panel">
     <div id="gesture-status">— 加载中...</div>
     <div id="gesture-action"></div>
@@ -46,22 +46,122 @@
     </div>
   </div>
 
-  <!-- 3D 地点悬浮卡片覆盖层 -->
-  <svg id="connector-lines"></svg>
-  <div id="place-cards"></div>
+  <!-- 登录/注册浮层（搬自旅行相册） -->
+  <div id="auth-modal" class="modal hidden">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content" style="max-width:24rem">
+      <div class="modal-header">
+        <h2 id="auth-title">登录</h2>
+        <button class="btn-close" id="btn-auth-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="auth-email">邮箱</label>
+          <input type="email" id="auth-email" placeholder="your@email.com" autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label for="auth-password">密码</label>
+          <input type="password" id="auth-password" placeholder="至少6位" autocomplete="current-password">
+        </div>
+        <div id="auth-error" style="color:#e55;font-size:0.75rem;margin-bottom:0.5rem;display:none"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-text" id="btn-auth-switch" style="margin-right:auto">没有账号？注册</button>
+        <button class="btn-primary" id="btn-auth-submit">登录</button>
+      </div>
+    </div>
+  </div>
 
-  <!-- 地点详情卡片 -->
+  <!-- 顶部按钮 -->
+  <button id="btn-add" class="btn-add" title="添加地点">+</button>
+
+  <!-- 添加/编辑地点浮层（搬自旅行相册） -->
+  <div id="add-modal" class="modal hidden">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>添加地点</h2>
+        <button class="btn-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="city-search">地点</label>
+          <div class="search-select">
+            <input type="text" id="city-search" placeholder="搜索中国城市，或直接输入国际城市名称..." autocomplete="off">
+            <div id="city-search-results" class="search-results"></div>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="input-lat">纬度 Lat</label>
+            <input type="number" id="input-lat" step="any" placeholder="31.2304">
+          </div>
+          <div class="form-group">
+            <label for="input-lng">经度 Lng</label>
+            <input type="number" id="input-lng" step="any" placeholder="121.4737">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="visit-date">访问日期</label>
+          <input type="date" id="visit-date">
+        </div>
+        <div class="form-group">
+          <label>评分</label>
+          <div class="star-input" id="star-input">
+            <span data-value="1">☆</span>
+            <span data-value="2">☆</span>
+            <span data-value="3">☆</span>
+            <span data-value="4">☆</span>
+            <span data-value="5">☆</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="place-notes">感想</label>
+          <textarea id="place-notes" rows="3" placeholder="写点感想..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>照片</label>
+          <div class="modal-photo-grid" id="modal-photo-grid"></div>
+          <button id="btn-modal-add-photo" class="btn-text">+ 添加照片</button>
+          <input type="file" id="modal-photo-input" accept="image/*" multiple hidden>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-outline" id="btn-delete-modal" style="margin-right:auto">删除</button>
+        <button class="btn-secondary" id="btn-cancel-add">取消</button>
+        <button class="btn-primary" id="btn-save-add">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 地点详情卡片（搬自旅行相册） -->
   <div id="detail-card" class="detail-card hidden">
     <div class="detail-header">
       <h2 id="detail-name"></h2>
       <button id="btn-close-detail" class="btn-close">&times;</button>
     </div>
     <div class="detail-body">
-      <div id="detail-fullname" class="detail-fullname"></div>
-      <div id="detail-stars" class="detail-stars"></div>
-      <div id="detail-coords" class="detail-coords"></div>
+      <div class="detail-meta">
+        <span id="detail-fullname" class="detail-fullname"></span>
+        <span id="detail-date" class="detail-date"></span>
+      </div>
+      <div class="detail-stars" id="detail-stars"></div>
+      <div class="detail-photos">
+        <div class="photo-grid" id="photo-grid"></div>
+        <button id="btn-add-photo" class="btn-text">+ 添加照片</button>
+        <input type="file" id="photo-input" accept="image/*" multiple hidden>
+      </div>
+      <div class="detail-notes" id="detail-notes"></div>
+    </div>
+    <div class="detail-footer">
+      <button id="btn-edit-place" class="btn-secondary">编辑</button>
+      <button id="btn-delete-place" class="btn-outline">删除</button>
     </div>
   </div>
+
+  <!-- 3D 地点悬浮卡片覆盖层 -->
+  <svg id="connector-lines"></svg>
+  <div id="place-cards"></div>
 
   <script type="importmap">
   {

@@ -6,8 +6,6 @@
 //
 // 依赖：earth.js 的 getFacing / projectToScreen / getEarthCenterScreen / onFrame
 
-import { renderStars } from './utils.js';
-
 const IS_TOUCH = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 const DOUBLE_TAP_MS = IS_TOUCH ? 250 : 350;
 
@@ -46,7 +44,7 @@ function createPlaceCard(place) {
   line.dataset.placeId = place.id;
   svg.appendChild(line);
 
-  const stars = renderStars(place.rating);
+  const stars = '★'.repeat(place.rating || 0) + '☆'.repeat(5 - (place.rating || 0));
   const thumb = place.photos && place.photos.length > 0
     ? `<img class="place-card-thumb" src="${place.photos[0].dataUrl}" alt="">` : '';
   const card = document.createElement('div');
@@ -377,7 +375,7 @@ export function updatePlaceCards() {
   }
 }
 
-// ===== 详情卡片 =====
+// ===== 详情卡片（搬自旅行相册 showDetail + renderPhotos） =====
 
 export function showDetail(id) {
   const place = _earth._places[id];
@@ -390,14 +388,62 @@ export function showDetail(id) {
 
   document.getElementById('detail-name').textContent = place.name;
   document.getElementById('detail-fullname').textContent = place.fullName || place.name;
+  document.getElementById('detail-date').textContent = place.visitDate || '';
 
-  // 星星
+  // 可点击评分星星
   const starContainer = document.getElementById('detail-stars');
-  starContainer.innerHTML = renderStars(place.rating);
+  starContainer.innerHTML = '';
+  for (let i = 1; i <= 5; i++) {
+    const span = document.createElement('span');
+    span.textContent = '★';
+    span.className = i <= (place.rating || 0) ? 'active' : '';
+    span.dataset.value = i;
+    span.addEventListener('click', () => {
+      place.rating = i;
+      // 刷新星星显示
+      starContainer.querySelectorAll('span').forEach((s, j) => {
+        s.className = j < i ? 'active' : '';
+      });
+      // 持久化 + 重建悬浮卡片
+      if (_earth._persist) _earth._persist();
+      syncPlaceCards();
+    });
+    starContainer.appendChild(span);
+  }
 
-  // 坐标
-  document.getElementById('detail-coords').textContent =
-    `${place.lat.toFixed(4)}°, ${place.lng.toFixed(4)}°`;
+  // 感想
+  document.getElementById('detail-notes').textContent = place.notes || '';
+
+  // 照片
+  _renderDetailPhotos(place);
+
+  // 编辑/删除按钮由 console.js 事件委托处理，这里不绑定
+}
+
+function _renderDetailPhotos(place) {
+  const grid = document.getElementById('photo-grid');
+  grid.innerHTML = '';
+
+  if (!place.photos || place.photos.length === 0) {
+    grid.innerHTML = '<div style="color:#666;font-size:13px;">暂无照片</div>';
+  } else {
+    for (const photo of place.photos) {
+      const wrapper = document.createElement('div');
+      wrapper.style.cssText = 'display:flex;flex-direction:column;gap:2px;';
+      const img = document.createElement('img');
+      img.src = photo.dataUrl;
+      img.alt = photo.caption || '';
+      img.title = photo.caption || '';
+      wrapper.appendChild(img);
+      if (photo.caption) {
+        const cap = document.createElement('span');
+        cap.textContent = photo.caption;
+        cap.style.cssText = 'font-size:11px;color:#888;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+        wrapper.appendChild(cap);
+      }
+      grid.appendChild(wrapper);
+    }
+  }
 }
 
 export function hideDetail() {
@@ -425,26 +471,6 @@ export function navigateCard(direction) {
 // ===== 事件绑定 =====
 
 function _bindEvents() {
-  // 关闭详情按钮
+  // 仅保留关闭详情按钮事件（其余由 console.js 统一管理）
   document.getElementById('btn-close-detail').addEventListener('click', hideDetail);
-
-  // 全局点击：非交互区域关闭详情、回退视角
-  document.addEventListener('click', (e) => {
-    const hitCard = e.target.closest('.place-card');
-    const hitDetail = e.target.closest('#detail-card');
-    const hitModal = e.target.closest('.modal');
-    const isInteractive = hitCard || hitDetail || hitModal ||
-      e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA';
-
-    // 关闭详情卡片
-    const card = document.getElementById('detail-card');
-    if (!card.classList.contains('hidden') && !hitDetail && !hitModal) {
-      card.classList.add('hidden');
-    }
-
-    // 非交互区域：回退视角
-    if (!isInteractive && _earth._focusedPlaceId) {
-      _earth.resetView();
-    }
-  });
 }

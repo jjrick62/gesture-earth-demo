@@ -16,119 +16,263 @@ body {
   width: 100vw;
 }
 
+input, textarea {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
 /* ===== 3D 容器 ===== */
 #globe-container {
-  position: fixed;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  z-index: 0;
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0;
 }
 
 /* ===== 摄像头小窗 ===== */
 #camera-window {
-  position: fixed;
-  bottom: 1rem;
-  left: 1rem;
-  width: 160px;
-  height: 120px;
-  border-radius: 0.5rem;
-  border: 1px solid #333;
-  object-fit: cover;
-  z-index: 10;
-  background: #111;
-  transform: scaleX(-1); /* 镜像 */
+  position: fixed; bottom: 1rem; left: 1rem;
+  width: 160px; height: 120px;
+  border-radius: 0.5rem; border: 1px solid #333;
+  object-fit: cover; z-index: 10; background: #111;
+  transform: scaleX(-1);
 }
 
-/* ===== 手势状态面板（摄像头上方，左下） ===== */
+/* ===== 手势状态面板 ===== */
 #gesture-panel {
-  position: fixed;
-  bottom: 8.75rem;  /* 摄像头 120px + 1rem + 0.25rem 间距 */
-  left: 1rem;
-  z-index: 10;
+  position: fixed; bottom: 8.75rem; left: 1rem; z-index: 10;
   background: rgba(18, 18, 24, 0.94);
-  border: 1px solid #333;
-  border-radius: 0.5rem;
-  padding: 0.625rem 0.875rem;
-  min-width: 10rem;
+  border: 1px solid #333; border-radius: 0.5rem;
+  padding: 0.625rem 0.875rem; min-width: 10rem;
   backdrop-filter: blur(12px);
 }
+#gesture-status { font-size: 0.875rem; color: #fff; font-weight: 500; }
+#gesture-action { font-size: 0.6875rem; color: #888; margin-top: 0.125rem; }
+#sensitivity-display { font-size: 0.625rem; color: #555; margin-top: 0.25rem; }
 
-#gesture-status {
-  font-size: 0.875rem;
-  color: #fff;
-  font-weight: 500;
-}
-
-#gesture-action {
-  font-size: 0.6875rem;
-  color: #888;
-  margin-top: 0.125rem;
-}
-
-#sensitivity-display {
-  font-size: 0.625rem;
-  color: #555;
-  margin-top: 0.25rem;
-}
-
-/* ===== 手势提示面板（底部居中） ===== */
+/* ===== 手势提示面板 ===== */
 #gesture-hint {
-  position: fixed;
-  bottom: 6rem;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 10;
+  position: fixed; bottom: 6rem; left: 50%; transform: translateX(-50%); z-index: 10;
   background: rgba(18, 18, 24, 0.94);
-  border: 1px solid #333;
-  border-radius: 0.5rem;
-  padding: 0.75rem 1rem;
-  backdrop-filter: blur(12px);
-  transition: opacity 0.6s;
-  font-size: 0.75rem;
-  color: #bbb;
-  line-height: 1.6;
-  text-align: center;
+  border: 1px solid #333; border-radius: 0.5rem;
+  padding: 0.75rem 1rem; backdrop-filter: blur(12px);
+  transition: opacity 0.6s; font-size: 0.75rem; color: #bbb;
+  line-height: 1.6; text-align: center;
 }
 
 /* ===== 底部状态栏 ===== */
 #status-bar {
-  position: fixed;
-  bottom: 0.5rem;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 10;
-  display: flex;
-  gap: 1rem;
-  font-size: 0.625rem;
-  color: #555;
+  position: fixed; bottom: 0.5rem; left: 50%; transform: translateX(-50%); z-index: 10;
+  display: flex; gap: 1rem; font-size: 0.625rem; color: #555;
 }
-
-#error-msg {
-  max-width: 20rem;
-  text-align: center;
-}
+#error-msg { max-width: 20rem; text-align: center; }
 
 /* ===== 加载遮罩 ===== */
 #loading-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 999;
-  background: #000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1rem;
-  color: #fff;
-  transition: opacity 0.3s;
+  position: fixed; inset: 0; z-index: 999; background: #000;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem; color: #fff; transition: opacity 0.3s;
 }
+
+/* ===== 按钮（搬自旅行相册） ===== */
+.btn-add {
+  position: fixed; top: 0.875rem; right: 1.25rem; z-index: 30;
+  background: none; border: 1px solid #444; color: #fff;
+  width: 2rem; height: 2rem; border-radius: 0.375rem;
+  cursor: pointer; font-size: 1.125rem; line-height: 1;
+  transition: border-color 0.2s;
+}
+.btn-add:hover { border-color: #888; }
+
+.btn-primary {
+  background: #333; border: none; color: #fff;
+  padding: 0.5rem 1.125rem; border-radius: 0.375rem;
+  cursor: pointer; font-size: 0.875rem; transition: background 0.2s;
+}
+.btn-primary:hover { background: #555; }
+
+.btn-secondary {
+  background: rgba(255,255,255,0.06); border: 1px solid #333; color: #ccc;
+  padding: 0.5rem 1.125rem; border-radius: 0.375rem;
+  cursor: pointer; font-size: 0.875rem; transition: border-color 0.2s, color 0.2s;
+}
+.btn-secondary:hover { border-color: #666; color: #fff; }
+
+.btn-outline {
+  background: none; border: 1px solid #444; color: #888;
+  padding: 0.5rem 1.125rem; border-radius: 0.375rem;
+  cursor: pointer; font-size: 0.875rem; transition: border-color 0.2s, color 0.2s;
+}
+.btn-outline:hover { border-color: #888; color: #fff; }
+
+.btn-text {
+  background: none; border: none; color: #666;
+  cursor: pointer; font-size: 0.8125rem; padding: 0.25rem 0.5rem;
+  transition: color 0.2s;
+}
+.btn-text:hover { color: #ccc; }
+
+.hidden { display: none !important; }
+
+/* ===== 模态框（搬自旅行相册） ===== */
+.modal { position: fixed; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center; }
+.modal-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.6); }
+
+.modal-content {
+  position: relative;
+  background: rgba(16, 16, 22, 0.96);
+  border: 1px solid #333; border-radius: 0.625rem;
+  width: 90%; max-width: 28.75rem; max-height: 80vh;
+  overflow-y: auto; backdrop-filter: blur(16px);
+}
+
+.modal-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 1.25rem 1.5rem 0;
+}
+.modal-header h2 { font-size: 1.0625rem; color: #fff; font-weight: 500; }
+
+.modal-body { padding: 1.25rem 1.5rem; }
+
+.modal-footer {
+  display: flex; justify-content: flex-end; gap: 0.625rem;
+  padding: 0 1.5rem 1.25rem;
+}
+
+.btn-close {
+  background: none; border: none; color: #555;
+  font-size: 1.375rem; cursor: pointer; line-height: 1;
+  transition: color 0.2s;
+}
+.btn-close:hover { color: #fff; }
+
+/* ===== 表单（搬自旅行相册） ===== */
+.form-group { margin-bottom: 0.875rem; }
+
+.form-group label {
+  display: block; font-size: 0.75rem; color: #666; margin-bottom: 0.375rem;
+}
+
+.form-group input[type="text"],
+.form-group input[type="date"],
+.form-group textarea {
+  width: 100%; background: #000; border: 1px solid #333;
+  border-radius: 0.375rem; padding: 0.625rem 0.875rem;
+  color: #ccc; font-size: 0.875rem; outline: none;
+  transition: border-color 0.2s;
+}
+.form-group input::placeholder,
+.form-group textarea::placeholder { color: #555; }
+.form-group input:focus,
+.form-group textarea:focus { border-color: #666; }
+.form-group textarea { resize: vertical; font-family: inherit; }
+
+/* ===== 搜索选择（搬自旅行相册） ===== */
+.search-select { position: relative; }
+
+.search-results {
+  position: fixed;
+  background: rgba(14,14,20,0.92);
+  border: 1px solid #333; border-radius: 0.5rem;
+  max-height: 12.5rem; max-width: min(20rem, calc(100vw - 2rem));
+  overflow-y: auto; z-index: 999; display: none;
+}
+.search-results.active { display: block; }
+
+.search-results .result-item {
+  padding: 0.625rem 0.875rem; cursor: pointer;
+  font-size: 0.875rem; color: #ccc;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  transition: background 0.15s;
+}
+.search-results .result-item:hover { background: rgba(255,255,255,0.06); }
+.search-results .result-item .province { font-size: 0.6875rem; color: #555; margin-left: 0.5rem; }
+
+/* ===== 星星（搬自旅行相册） ===== */
+.star-input span, .detail-stars span {
+  font-size: 1.5rem; cursor: pointer; color: #333;
+  transition: color 0.15s;
+}
+.star-input span.active,
+.detail-stars span.active { color: #fff; }
+
+/* ===== 详情卡片（搬自旅行相册） ===== */
+.detail-card {
+  position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 20;
+  width: clamp(18rem, 25vw, 22rem); max-height: 70vh;
+  background: rgba(16, 16, 22, 0.96);
+  border: 1px solid #333; border-radius: 0.625rem;
+  backdrop-filter: blur(16px); overflow-y: auto;
+  animation: slideIn 0.25s ease;
+}
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.detail-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 1.125rem 1.25rem 0;
+}
+.detail-header h2 { font-size: 1.0625rem; color: #fff; font-weight: 500; }
+
+.detail-body { padding: 0.875rem 1.25rem; }
+
+.detail-footer {
+  display: flex; gap: 0.5rem;
+  padding: 0 1.25rem 1.125rem;
+}
+
+.detail-meta {
+  display: flex; justify-content: space-between;
+  font-size: 0.75rem; color: #666; margin-bottom: 0.625rem;
+}
+
+.detail-stars { margin-bottom: 0.875rem; }
+
+.detail-notes {
+  font-size: 0.875rem; line-height: 1.6; color: #aaa;
+  margin-top: 0.625rem; white-space: pre-wrap;
+}
+
+/* ===== 照片（搬自旅行相册） ===== */
+.photo-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 0.25rem; margin-bottom: 0.5rem;
+}
+.photo-grid img {
+  width: 100%; aspect-ratio: 1; object-fit: cover;
+  border-radius: 0.25rem; cursor: pointer; transition: opacity 0.2s;
+}
+.photo-grid img:hover { opacity: 0.7; }
+
+.modal-photo-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 0.25rem; margin-bottom: 0.5rem; min-height: 2.5rem;
+}
+.modal-photo-grid:empty::after {
+  content: '暂无照片'; color: #555; font-size: 0.75rem;
+  grid-column: 1 / -1; padding: 0.5rem 0;
+}
+.modal-photo-wrap {
+  position: relative; aspect-ratio: 1;
+  border-radius: 0.25rem; overflow: hidden;
+}
+.modal-photo-wrap img { width: 100%; height: 100%; object-fit: cover; }
+.modal-photo-del {
+  position: absolute; top: 2px; right: 2px;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: rgba(0,0,0,0.7); border: none;
+  color: #999; font-size: 0.75rem; line-height: 1;
+  cursor: pointer; display: flex;
+  align-items: center; justify-content: center;
+  transition: color 0.15s, background 0.15s;
+}
+.modal-photo-del:hover { color: #fff; background: rgba(200,60,60,0.8); }
 
 /* ===== SVG 连接线 ===== */
 #connector-lines {
   position: fixed; inset: 0; z-index: 5; pointer-events: none;
 }
 #connector-lines line {
-  stroke: rgba(255,255,255,0.25);
-  stroke-width: 1;
+  stroke: rgba(255,255,255,0.35); stroke-width: 1;
 }
 
 /* ===== 3D 悬浮卡片 ===== */
@@ -136,91 +280,48 @@ body {
   position: fixed; inset: 0; z-index: 6; pointer-events: none;
 }
 .place-card {
-  position: absolute;
-  pointer-events: auto;
-  background: rgba(14,14,20,0.1);
-  border: 1px solid #333;
-  border-radius: 0.5rem;
-  padding: 0.5rem 0.625rem;
-  color: #ccc;
-  font-size: 0.75rem;
-  cursor: pointer;
-  min-width: 8.75rem;
-  max-width: 12.5rem;
-  backdrop-filter: blur(8px);
+  position: absolute; pointer-events: auto;
+  background: rgba(14,14,20,0.1); border: 1px solid #333;
+  border-radius: 0.5rem; padding: 0.5rem 0.625rem;
+  color: #ccc; font-size: 0.75rem; cursor: pointer;
+  min-width: 8.75rem; max-width: 12.5rem;
 }
 .place-card:hover { border-color: #666; }
 .place-card-stacked::before,
 .place-card-stacked::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: 0.5rem;
-  background: rgba(14,14,20,0.1);
-  border: 1px solid #333;
-  z-index: -1;
-  pointer-events: none;
+  content: ''; position: absolute; inset: 0;
+  border-radius: 0.5rem; background: rgba(14,14,20,0.1);
+  border: 1px solid #333; z-index: -1; pointer-events: none;
 }
 .place-card-stacked::before { transform: translate(0.25rem, -0.25rem); }
 .place-card-stacked::after  { transform: translate(0.5rem, -0.5rem); }
 .place-card-name { color: #fff; font-size: 0.8125rem; font-weight: 500; margin-bottom: 2px; }
 .place-card-meta { color: #888; font-size: 0.6875rem; }
 .place-card-thumb {
-  width: 100%; height: 3.75rem; object-fit: cover; border-radius: 0.25rem; margin-top: 0.25rem;
+  width: 100%; height: 3.75rem; object-fit: cover;
+  border-radius: 0.25rem; margin-top: 0.25rem;
 }
 
-/* ===== 详情卡片 ===== */
-.detail-card {
-  position: fixed;
-  bottom: 1.5rem;
-  right: 1.5rem;
-  z-index: 20;
-  width: clamp(18rem, 25vw, 22rem);
-  max-height: 70vh;
-  background: rgba(16, 16, 22, 0.96);
-  border: 1px solid #333;
-  border-radius: 0.625rem;
-  backdrop-filter: blur(16px);
-  overflow-y: auto;
-  animation: slideIn 0.25s ease;
-}
-.detail-card.hidden { display: none; }
+/* ===== 滚动条 ===== */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
 
-@keyframes slideIn {
-  from { opacity: 0; transform: translateX(20px); }
-  to { opacity: 1; transform: translateX(0); }
-}
+/* ===== 响应式（搬自旅行相册） ===== */
 
-.detail-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1.125rem 1.25rem 0;
-}
-.detail-header h2 { font-size: 1.0625rem; color: #fff; font-weight: 500; }
-
-.btn-close {
-  background: none; border: none; color: #888; font-size: 1.25rem;
-  cursor: pointer; line-height: 1;
-}
-.btn-close:hover { color: #fff; }
-
-.detail-body { padding: 0.875rem 1.25rem 1.125rem; }
-
-.detail-fullname {
-  font-size: 0.75rem; color: #666; margin-bottom: 0.625rem;
-}
-.detail-stars {
-  font-size: 0.875rem; color: #f0c040; letter-spacing: 0.125rem; margin-bottom: 0.5rem;
-}
-.detail-coords {
-  font-size: 0.6875rem; color: #555;
-}
-
-/* ===== 响应式 ===== */
+/* 手机竖屏 (< 480px) */
 @media (max-width: 479px) {
+  html { font-size: 14px; }
+
+  .btn-add {
+    top: 0.5rem; right: 0.75rem;
+    width: 1.75rem; height: 1.75rem; font-size: 0.9375rem;
+  }
+
   .place-card {
-    padding: 0.375rem 0.5rem; min-width: 6rem; max-width: 9rem;
+    min-width: 5.5rem; max-width: 7.5rem;
+    padding: 0.35rem 0.4rem; border-radius: 0.375rem;
+    font-size: 0.6875rem;
   }
   .place-card-name { font-size: 0.6875rem; }
   .place-card-meta { font-size: 0.625rem; }
@@ -229,6 +330,42 @@ body {
   .place-card-stacked::after { display: none; }
 
   .detail-card {
-    bottom: 0.75rem; right: 0.75rem; width: calc(100vw - 1.5rem); max-width: none;
+    left: 0; right: 0; bottom: 0; width: 100%;
+    max-height: 58vh; border-radius: 0.625rem 0.625rem 0 0;
+    animation: slideUp 0.25s ease;
   }
+  @keyframes slideUp {
+    from { transform: translateY(100%); }
+    to   { transform: translateY(0); }
+  }
+
+  .modal-content {
+    width: 100%; max-width: 100%; max-height: 88vh;
+    border-radius: 0.625rem 0.625rem 0 0; align-self: flex-end;
+  }
+  .modal-header { padding: 1rem 1.25rem 0; }
+  .modal-body   { padding: 1rem 1.25rem; }
+  .modal-footer { padding: 0 1.25rem 1rem; }
+
+  .photo-grid { grid-template-columns: repeat(4, 1fr); gap: 0.1875rem; }
+  .modal-photo-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+/* 手机横屏 / 小平板 (480px - 767px) */
+@media (min-width: 480px) and (max-width: 767px) {
+  html { font-size: 15px; }
+
+  .place-card { min-width: 6rem; max-width: 8.5rem; }
+  .place-card-thumb { height: 3rem; }
+
+  .detail-card {
+    width: min(20rem, calc(100% - 0.75rem));
+    right: 0.375rem; bottom: 0.75rem; max-height: 65vh;
+  }
+  .modal-content { max-width: 28rem; }
+}
+
+/* 桌面 (>= 768px) */
+@media (min-width: 768px) {
+  html { font-size: 16px; }
 }
