@@ -174,7 +174,11 @@ function _createSearch(inputId, resultsId, onSelect) {
     for (const c of matched) {
       const div = document.createElement('div');
       div.className = 'result-item';
-      div.innerHTML = `${c.name}<span class="province">${c.province}</span>`;
+      div.appendChild(document.createTextNode(c.name));
+      const provSpan = document.createElement('span');
+      provSpan.className = 'province';
+      provSpan.textContent = c.province;
+      div.appendChild(provSpan);
       div.addEventListener('click', () => {
         input.value = c.name;
         results.classList.remove('active');

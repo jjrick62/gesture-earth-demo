@@ -45,13 +45,27 @@ function createPlaceCard(place) {
   svg.appendChild(line);
 
   const stars = '★'.repeat(place.rating || 0) + '☆'.repeat(5 - (place.rating || 0));
-  const thumb = place.photos && place.photos.length > 0
-    ? `<img class="place-card-thumb" src="${place.photos[0].dataUrl}" alt="">` : '';
   const card = document.createElement('div');
   card.className = 'place-card';
   card.dataset.placeId = place.id;
-  card.innerHTML = `<div class="place-card-name">${place.name}</div>
-    <div class="place-card-meta">${stars}</div>${thumb}`;
+
+  const nameDiv = document.createElement('div');
+  nameDiv.className = 'place-card-name';
+  nameDiv.textContent = place.name;
+  card.appendChild(nameDiv);
+
+  const metaDiv = document.createElement('div');
+  metaDiv.className = 'place-card-meta';
+  metaDiv.textContent = stars;
+  card.appendChild(metaDiv);
+
+  if (place.photos && place.photos.length > 0) {
+    const img = document.createElement('img');
+    img.className = 'place-card-thumb';
+    img.src = place.photos[0].dataUrl;
+    img.alt = '';
+    card.appendChild(img);
+  }
 
   card.addEventListener('click', () => {
     // 折叠代表卡片：先飞过去，再展开

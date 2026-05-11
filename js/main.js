@@ -12,8 +12,21 @@ function fatal(msg){
   _run=false; UI.hideLoad();
   UI.err(msg,'fatal');
   const ov=document.getElementById('loading-overlay');
-  ov.innerHTML=`<div style="text-align:center"><p style="color:#e55;font-size:1.2rem">${msg}</p><button onclick="location.reload()" style="margin-top:1rem;padding:0.5rem 1.5rem;background:#333;color:#fff;border:1px solid #555;border-radius:0.25rem;cursor:pointer">刷新重试</button></div>`;
-  ov.style.display='flex'; ov.style.opacity='1';
+  ov.textContent = '';
+  const wrap = document.createElement('div');
+  wrap.style.textAlign = 'center';
+  const p = document.createElement('p');
+  p.style.cssText = 'color:#e55;font-size:1.2rem';
+  p.textContent = msg;
+  wrap.appendChild(p);
+  const btn = document.createElement('button');
+  btn.textContent = '刷新重试';
+  btn.style.cssText = 'margin-top:1rem;padding:0.5rem 1.5rem;background:#333;color:#fff;border:1px solid #555;border-radius:0.25rem;cursor:pointer';
+  btn.addEventListener('click', () => location.reload());
+  wrap.appendChild(btn);
+  ov.appendChild(wrap);
+  ov.style.display = 'flex';
+  ov.style.opacity = '1';
 }
 
 let _fc=0, _cardLocked=false;
