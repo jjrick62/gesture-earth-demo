@@ -24,7 +24,49 @@
 
 ### CSP 踩坑
 
-初始 CSP `connect-src` 只允许 `localhost:8000`，导致 MediaPipe WASM 从 `cdn.jsdelivr.net` 加载被拦截（手势识别失效）。已修正为同时允许 CDN。
+初始 CSP `connect-src` 只允许 `localhost:8000`，导致 MediaPipe WASM 从 `cdn.jsdelivr.net` 加载被拦截（手势识别失效）。已修正为同时允许 CDN + `wasm-unsafe-eval`（WASM 编译需要）。
+
+### 视角复位优化
+
+用户反馈张开手掌旋转时视角总跳到固定位置。根因：palm 手势检测到 `_focusedPlaceId` 后先执行 `resetView()` 飞回地心。
+- **mapper.js**：移除 palm 中的 `resetView()` 调用，张开手掌直接旋转，不跳视角
+- **console.js**：关闭编辑弹窗不再强制 `zoomOutFromPlace`/`resetView`
+- 保留：点击空白处复位、拖拽解锁聚焦（target→地心+摄像机原地）、重置视角按钮
+
+### 捏合缩放灵敏度
+
+`ZOOM_GAIN` 20→120，速度上限 ±0.3→±1.0，捏合缩放手感大幅提升。
+
+### 旅行相册同步
+
+安全修复全部 8 项 + 视角逻辑优化已同步到旅行相册项目并推送。改动文件：`storage.py, config.py, photos.py, schemas.py, requirements.txt, index.html, app.js`
+
+## 下次任务（按优先级）
+
+### P0: 国际城市数据集（GeoNames）
+- 下载 `cities5000.txt`（全球 ~4.7 万城市，含中英文名/坐标/人口）
+- 写脚本转成 `cities.json` 兼容格式
+- 合并中国 3000 + 国际 ~5000 城市
+- 搜索支持英文原名 + 中文音译
+- **做完这个，自由输入彻底不需要了，输入端的 XSS 风险自然消除**
+
+### P1: 安全修复第二阶段（7 项）
+- F9: 注册频率限制（slowapi 或手写 IP 限流）
+- F10: 登录暴力破解防护（连续失败 N 次锁定）
+- F11: 邮箱验证（注册后发验证邮件）
+- F12: 照片服务认证（`/api/photos/file/{path}` 加上 `get_current_user`）
+- F13: 经纬度/评分/notes 输入范围约束（Pydantic `Field(ge=, le=)`）
+- F14: UserLogin email 也改为 EmailStr
+- F15: `window.API_BASE` 防 XSS 劫持
+
+### P2: 功能搬运
+- 照片查看器（`openPhotoViewer` + 翻页）
+- 地点总览列表（`renderOverview`）
+
+### P3: 其他
+- `china_districts.geojson` 23MB 部署（区县级填充）
+- 移动端触摸优化
+- Session 过期后 401 自动重登流程优化
 
 ## 上次交接遗留上下文（2026-05-10）
 
