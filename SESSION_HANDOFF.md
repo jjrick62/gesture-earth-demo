@@ -1,6 +1,34 @@
-# 会话交接 — 2026-05-10
+# 会话交接 — 2026-05-11
 
-## 全日成果
+## 本日成果：安全修复第一阶段（全部 8 项完成）
+
+| # | 文件 | 问题 | 方案 | 验证 |
+|:--:|------|------|------|:--:|
+| F1 | `js/card.js:53` | 存储型 XSS（place.name → innerHTML） | DOM API + textContent | 攻击脚本测试通过 |
+| F2 | `js/main.js:15` | DOM XSS（fatal() msg → innerHTML） | DOM API + textContent | 攻击脚本测试通过 |
+| F3 | `backend/storage.py` | 路径遍历（../可读写任意文件） | `_safe_path()` + realpath 前缀校验 | curl 攻击拦截 |
+| F4 | `backend/config.py` | 默认 JWT 密钥 | `secrets.token_urlsafe(32)` 随机生成 | 源码审计通过 |
+| F5 | `backend/routers/photos.py` | 上传无限制 | MIME 白名单 + 10MB 上限 | 非图片/超大文件 400 |
+| F6 | `index.html` | 无 CSP | meta 标签（含 CDN WASM connect-src） | 源码审计通过 |
+| F7 | `js/console.js:177` | 城市搜索 innerHTML | createTextNode + textContent | 攻击脚本测试通过 |
+| F8 | `backend/schemas.py` | 密码无约束 | `Field(min_length=8)` + EmailStr | 弱密码/无效邮箱 422 |
+
+### 攻击脚本验证结果：10/10 全部通过
+
+路径遍历拦截、非图片文件拒绝、超大文件拒绝、弱密码 422、无效邮箱 422、XSS 代码清除、CSP 存在、密钥随机化、合法注册正常。
+
+### 架构讨论
+
+- **OOP 评估**：当前只有 Earth 是类，其他是函数模块。后续加照片管理/用户系统/分享时，用类封装新模块，渐进式过渡。
+- **输入校验策略**：国际城市问题已讨论，后续引入 GeoNames 数据集统一走搜索匹配，彻底去掉自由输入。
+
+### CSP 踩坑
+
+初始 CSP `connect-src` 只允许 `localhost:8000`，导致 MediaPipe WASM 从 `cdn.jsdelivr.net` 加载被拦截（手势识别失效）。已修正为同时允许 CDN。
+
+## 上次交接遗留上下文（2026-05-10）
+
+### 一、卡片管理控制台（从旅行相册完整搬运）
 
 ### 一、卡片管理控制台（从旅行相册完整搬运）
 
