@@ -20,7 +20,7 @@ export const DECAY_ZOOM = 0.9;
 export const GAIN_ROTATE = 80;
 export const GAIN_PITCH = 50;
 export const GAIN_ZOOM = 0.02;
-export const ZOOM_GAIN = 20;  // 捏合缩放灵敏度（速度模型，需跨 earth 0.001 门槛）
+export const ZOOM_GAIN = 120;  // 捏合缩放灵敏度（速度模型，需跨 earth 0.001 门槛）
 
 // 频率补偿系数（摄像头 15fps → 渲染 60fps）
 export const FREQ_RATIO = 15 / 60;

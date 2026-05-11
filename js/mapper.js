@@ -18,12 +18,6 @@ export function step(cls){
   if(g==='palm'){
     // === 手掌张开：旋转 + 俯仰 ===
     s='r'; a='旋转';
-    // 如果正聚焦某个地点 → 退出聚焦，回地心视角
-    if (_earth._focusedPlaceId) {
-      _earth.resetView();
-      _earth._focusedPlaceId = null;
-      document.getElementById('detail-card').classList.add('hidden');
-    }
     _earth.rotating=false;
     _earth._controlsLocked = true;
     _zoomV=0;
@@ -50,7 +44,7 @@ export function step(cls){
     if(_lp){
       const dy=c.y-_lp.y;
       _zoomV += -dy * _sens * ZOOM_GAIN; // 手上移→拉近
-      _zoomV = clamp(_zoomV, -0.3, 0.3);
+      _zoomV = clamp(_zoomV, -1.0, 1.0);
       _zoomV *= DECAY_CAMERA;
       _earth._gestureZoomSpeed = _zoomV;
     }

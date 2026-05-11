@@ -219,16 +219,8 @@ export function openEditModal(place) {
 
 function _closeModal() {
   document.getElementById('add-modal').classList.add('hidden');
-  const pid = _editingId;
   _editingId = null;
   _tempPhotos = [];
-  if (pid) {
-    const p = _earth._places[pid];
-    if (p) _earth.zoomOutFromPlace(p.lat, p.lng);
-    else _earth.resetView();
-  } else {
-    _earth.resetView();
-  }
 }
 
 // ===== 照片 =====
