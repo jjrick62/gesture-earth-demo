@@ -75,6 +75,7 @@
 
   <!-- 顶部按钮 -->
   <button id="btn-add" class="btn-add" title="添加地点">+</button>
+  <button id="btn-overview" class="btn-overview" title="地点总览">☰</button>
 
   <!-- 添加/编辑地点浮层（搬自旅行相册） -->
   <div id="add-modal" class="modal hidden">
@@ -88,7 +89,7 @@
         <div class="form-group">
           <label for="city-search">地点</label>
           <div class="search-select">
-            <input type="text" id="city-search" placeholder="搜索中国城市，或直接输入国际城市名称..." autocomplete="off">
+            <input type="text" id="city-search" placeholder="搜索城市/地区（支持中英文）..." autocomplete="off">
             <div id="city-search-results" class="search-results"></div>
           </div>
         </div>
@@ -132,6 +133,19 @@
         <button class="btn-secondary" id="btn-cancel-add">取消</button>
         <button class="btn-primary" id="btn-save-add">保存</button>
       </div>
+    </div>
+  </div>
+
+  <!-- 地点总览 -->
+  <div id="overview-modal" class="modal hidden">
+    <div class="modal-backdrop"></div>
+    <div class="overview-content">
+      <div class="overview-header">
+        <h2>地点总览</h2>
+        <span id="overview-stats" class="overview-stats"></span>
+        <button class="btn-close">&times;</button>
+      </div>
+      <div class="overview-body" id="overview-list"></div>
     </div>
   </div>
 

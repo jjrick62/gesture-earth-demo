@@ -145,6 +145,8 @@ input, textarea {
 
 /* ===== 表单（搬自旅行相册） ===== */
 .form-group { margin-bottom: 0.875rem; }
+.form-row { display: flex; gap: 0.75rem; }
+.form-row .form-group { flex: 1; }
 
 .form-group label {
   display: block; font-size: 0.75rem; color: #666; margin-bottom: 0.375rem;
@@ -152,6 +154,7 @@ input, textarea {
 
 .form-group input[type="text"],
 .form-group input[type="date"],
+.form-group input[type="number"],
 .form-group textarea {
   width: 100%; background: #000; border: 1px solid #333;
   border-radius: 0.375rem; padding: 0.625rem 0.875rem;
@@ -368,4 +371,83 @@ input, textarea {
 /* 桌面 (>= 768px) */
 @media (min-width: 768px) {
   html { font-size: 16px; }
+}
+
+/* ===== 总览按钮 ===== */
+.btn-overview {
+  position: fixed; top: 1rem; right: 3.75rem;
+  width: 2.5rem; height: 2.5rem;
+  background: rgba(16,16,22,0.85);
+  border: 1px solid #333; border-radius: 0.5rem;
+  color: #888; font-size: 1.125rem; line-height: 1;
+  cursor: pointer; z-index: 100;
+  backdrop-filter: blur(8px);
+  transition: border-color 0.15s, color 0.15s;
+}
+.btn-overview:hover { border-color: #666; color: #fff; }
+
+/* ===== 地点总览弹窗 ===== */
+.overview-content {
+  position: relative;
+  background: rgba(16, 16, 22, 0.97);
+  border: 1px solid #333;
+  border-radius: 0.625rem;
+  width: 90%;
+  max-width: 40rem;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  backdrop-filter: blur(16px);
+}
+.overview-header {
+  display: flex; align-items: center; gap: 0.75rem;
+  padding: 1.25rem 1.5rem 0; flex-shrink: 0;
+}
+.overview-header h2 {
+  font-size: 1.0625rem; color: #fff; font-weight: 500;
+}
+.overview-stats {
+  font-size: 0.75rem; color: #666;
+  margin-left: auto; margin-right: 0.75rem;
+}
+.overview-body {
+  padding: 1rem 1.5rem 1.25rem;
+  overflow-y: auto; flex: 1;
+}
+.overview-item {
+  display: flex; align-items: center; gap: 0.625rem;
+  padding: 0.625rem 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  cursor: pointer; transition: background 0.15s;
+}
+.overview-item:hover { background: rgba(255,255,255,0.03); }
+.overview-item:last-child { border-bottom: none; }
+.overview-item-main { flex: 1; min-width: 0; }
+.overview-item-name {
+  color: #fff; font-size: 0.875rem; font-weight: 500;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.overview-item-sub {
+  color: #555; font-size: 0.6875rem; margin-top: 0.125rem;
+}
+.overview-item-stars {
+  color: #666; font-size: 0.75rem; white-space: nowrap;
+}
+.overview-item-photos {
+  color: #555; font-size: 0.6875rem; white-space: nowrap;
+}
+.overview-item-actions {
+  display: flex; gap: 0.25rem;
+}
+.overview-btn {
+  background: none; border: 1px solid #333; color: #888;
+  padding: 0.25rem 0.5rem; border-radius: 0.25rem;
+  cursor: pointer; font-size: 0.6875rem; white-space: nowrap;
+  transition: border-color 0.15s, color 0.15s;
+}
+.overview-btn:hover { border-color: #666; color: #fff; }
+.overview-btn.danger:hover { border-color: #a33; color: #e55; }
+.overview-empty {
+  text-align: center; color: #555;
+  padding: 2rem 0; font-size: 0.875rem;
 }

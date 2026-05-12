@@ -15,9 +15,74 @@ const DEMO_PLACES = [
 
 let _earth = null;
 let _citiesData = [];
+let _regionsData = [];
+let _worldCitiesData = [];
+let _regionsLoaded = false;
+let _worldCitiesLoaded = false;
 let _editingId = null;
 let _addRating = 0;
 let _tempPhotos = [];
+
+// ===== 异步加载国际数据 =====
+
+async function _ensureRegions() {
+  if (_regionsLoaded) return;
+  try {
+    const resp = await fetch('data/regions_world.json');
+    if (resp.ok) {
+      const raw = await resp.json();
+      _regionsData = raw.map(r => ({
+        name: r.zh || r.en,
+        nameEn: r.en,
+        province: r.ad || r.cc,
+        lat: r.la,
+        lng: r.lo,
+        level: 'region',
+      }));
+      _regionsLoaded = true;
+      console.log('regions_world.json 加载完成: %d 条', _regionsData.length);
+    }
+  } catch (e) { console.warn('国际地区数据加载失败', e); }
+}
+
+async function _ensureWorldCities() {
+  if (_worldCitiesLoaded) return;
+  try {
+    const resp = await fetch('data/cities_world.json');
+    if (resp.ok) {
+      const raw = await resp.json();
+      _worldCitiesData = raw.map(c => ({
+        name: c.en,
+        nameEn: c.en,
+        province: c.cc,
+        lat: c.la,
+        lng: c.lo,
+        level: 'city',
+        pop: c.pop || 0,
+      }));
+      _worldCitiesLoaded = true;
+      console.log('cities_world.json 加载完成: %d 条', _worldCitiesData.length);
+    }
+  } catch (e) { console.warn('国际城市数据加载失败', e); }
+}
+
+function _scoreMatch(item, q) {
+  let score = 0;
+  const name = item.name || '';
+  const nameEn = (item.nameEn || '').toLowerCase();
+  const province = item.province || '';
+  const qLower = q.toLowerCase();
+
+  if (name === q || nameEn === qLower) { score = 100; }
+  else if (name.startsWith(q) || nameEn.startsWith(qLower)) { score = 80; }
+  else if (name.includes(q) || nameEn.includes(qLower)) { score = 50; }
+  else if (province.includes(q) || province.toLowerCase().includes(qLower)) { score = 20; }
+  else { return 0; }
+
+  if (item.level === 'city') score += 2;
+  else if (item.level === 'province') score += 1;
+  return score;
+}
 
 // ===== 认证（搬自旅行相册 bindAuthEvents + handleAuthSubmit） =====
 
@@ -76,6 +141,7 @@ export async function initConsole(earth) {
   } catch (e) { console.warn('城市数据加载失败', e); }
 
   _bindAuthEvents();
+  _bindEvents(); // 基础事件尽早绑定，不受登录态影响
 
   if (!isLoggedIn()) {
     _showAuthModal();
@@ -107,6 +173,7 @@ async function _doInit() {
 
     _earth.setHome(31.2304, 121.4737, '上海市', '上海市');
     syncPlaceCards();
+    _bindEvents();
   } catch (err) {
     console.error('数据加载失败', err);
   }
@@ -144,21 +211,31 @@ function _createSearch(inputId, resultsId, onSelect) {
     document.body.appendChild(results);
   }
 
+  input.addEventListener('focus', () => {
+    _ensureRegions();
+  });
+
   input.addEventListener('input', () => {
     const q = input.value.trim();
     if (!q) { results.classList.remove('active'); return; }
 
+    // 输入非中文时，触发国际城市异步加载
+    if (!/[一-鿿]/.test(q)) {
+      _ensureWorldCities();
+    }
+
     const scored = [];
     for (const c of _citiesData) {
-      let score = 0;
-      if (c.name === q) { score = 100; }
-      else if (c.name.startsWith(q)) { score = 80; }
-      else if (c.name.includes(q)) { score = 50; }
-      else if (c.province.includes(q)) { score = 20; }
-      else { continue; }
-      if (c.level === 'city') score += 2;
-      else if (c.level === 'province') score += 1;
-      scored.push({ city: c, score });
+      const s = _scoreMatch(c, q);
+      if (s > 0) scored.push({ city: c, score: s });
+    }
+    for (const r of _regionsData) {
+      const s = _scoreMatch(r, q);
+      if (s > 0) scored.push({ city: r, score: s });
+    }
+    for (const w of _worldCitiesData) {
+      const s = _scoreMatch(w, q);
+      if (s > 0) scored.push({ city: w, score: s });
     }
     scored.sort((a, b) => b.score - a.score);
     const matched = scored.slice(0, 15).map(s => s.city);
@@ -270,7 +347,10 @@ async function _savePlace() {
     lng = _selectedCity.lng;
     fullName = _selectedCity.province + '·' + _selectedCity.name;
   } else {
-    const match = _citiesData.find(c => c.name === name) || _citiesData.find(c => c.name.includes(name));
+    const match = _citiesData.find(c => c.name === name)
+      || _regionsData.find(r => r.name === name || r.nameEn === name)
+      || _worldCitiesData.find(w => w.name === name || w.nameEn === name)
+      || _citiesData.find(c => c.name.includes(name));
     if (match) {
       _selectedCity = match;
       document.getElementById('city-search').value = match.name;
@@ -409,7 +489,12 @@ function _bindAuthEvents() {
   });
 }
 
+let _eventsBound = false;
+
 function _bindEvents() {
+  if (_eventsBound) return;
+  _eventsBound = true;
+
   // 添加按钮
   document.getElementById('btn-add').addEventListener('click', () => openEditModal(null));
 
@@ -532,5 +617,100 @@ function _bindEvents() {
       const modal = document.getElementById('add-modal');
       if (!modal.classList.contains('hidden')) _closeModal();
     }
+  });
+
+  // 总览按钮
+  document.getElementById('btn-overview').addEventListener('click', () => _openOverview());
+  // 总览弹窗关闭
+  document.getElementById('overview-modal').querySelector('.btn-close').addEventListener('click', () => _closeOverview());
+  document.getElementById('overview-modal').querySelector('.modal-backdrop').addEventListener('click', () => _closeOverview());
+}
+
+// ===== 地点总览 =====
+
+function _openOverview() {
+  document.getElementById('overview-modal').classList.remove('hidden');
+  _renderOverview();
+}
+
+function _closeOverview() {
+  document.getElementById('overview-modal').classList.add('hidden');
+}
+
+async function _renderOverview() {
+  const container = document.getElementById('overview-list');
+  let placesArr;
+  try {
+    placesArr = await getAllPlaces();
+  } catch (e) { placesArr = []; }
+
+  const sorted = [...placesArr].sort((a, b) => (b.visitDate || '').localeCompare(a.visitDate || ''));
+  const total = sorted.length;
+  const avg = total > 0 ? (sorted.reduce((s, p) => s + (p.rating || 3), 0) / total).toFixed(1) : '0.0';
+  document.getElementById('overview-stats').textContent = `${total} 个地点 · ★ ${avg}`;
+
+  if (total === 0) {
+    container.innerHTML = '<div class="overview-empty">还没有地点，点击右上角 + 添加</div>';
+    return;
+  }
+
+  container.innerHTML = sorted.map(p => {
+    const stars = '★'.repeat(p.rating || 3) + '☆'.repeat(5 - (p.rating || 3));
+    const photoCount = p.photos ? p.photos.length : 0;
+    return `
+      <div class="overview-item" data-id="${p.id}">
+        <div class="overview-item-main">
+          <div class="overview-item-name">${p.name}</div>
+          <div class="overview-item-sub">${p.fullName || p.name} · ${p.visitDate || '无日期'}</div>
+        </div>
+        <span class="overview-item-stars">${stars}</span>
+        <span class="overview-item-photos">${photoCount}张</span>
+        <div class="overview-item-actions">
+          <button class="overview-btn" data-action="edit" data-id="${p.id}">编辑</button>
+          <button class="overview-btn danger" data-action="delete" data-id="${p.id}">删除</button>
+        </div>
+      </div>`;
+  }).join('');
+
+  container.querySelectorAll('.overview-item').forEach(item => {
+    item.addEventListener('click', (e) => {
+      if (e.target.closest('button')) return;
+      const id = item.dataset.id;
+      const place = _earth._places[id];
+      if (!place) return;
+      _closeOverview();
+      _earth._focusedPlaceId = id;
+      _earth.highlightFill(id);
+      _earth.focusOnPlace(place.lat, place.lng, () => showDetail(id));
+    });
+  });
+
+  container.querySelectorAll('[data-action="edit"]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const id = btn.dataset.id;
+      const place = _earth._places[id];
+      if (!place) return;
+      _closeOverview();
+      _earth._focusedPlaceId = id;
+      _earth.highlightFill(id);
+      _earth.focusOnPlace(place.lat, place.lng, () => openEditModal(place));
+    });
+  });
+
+  container.querySelectorAll('[data-action="delete"]').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const id = btn.dataset.id;
+      const place = _earth._places[id];
+      if (!place || !confirm(`删除 ${place.name} ？`)) return;
+      try {
+        await deletePlace(id);
+        _earth.removePlace(id);
+        syncPlaceCards();
+        hideDetail();
+        _renderOverview();
+      } catch (err) { alert('删除失败: ' + err.message); }
+    });
   });
 }

@@ -139,9 +139,10 @@ export async function savePlace(place) {
   const body = _placeToBack(place);
   if (place._exists) {
     await request('PUT', `/api/places/${place.id}`, body);
+    return place;
   } else {
     const data = await request('POST', '/api/places', body);
-    place.id = data.id; // 回填服务端生成的 ID
+    return { ...place, id: data.id }; // 不改变原始对象，返回新对象
   }
 }
 
