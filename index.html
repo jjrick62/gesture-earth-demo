@@ -174,6 +174,21 @@
     </div>
   </div>
 
+  <!-- 照片预览浮层 -->
+  <div id="photo-viewer" class="modal hidden">
+    <div class="modal-backdrop"></div>
+    <div class="photo-viewer-content">
+      <button class="btn-close btn-close-light">&times;</button>
+      <button id="photo-prev" class="photo-nav-btn photo-prev">&lsaquo;</button>
+      <button id="photo-next" class="photo-nav-btn photo-next">&rsaquo;</button>
+      <span id="photo-index" class="photo-index"></span>
+      <img id="photo-viewer-img" src="" alt="照片">
+      <div class="photo-caption-wrap">
+        <input type="text" id="photo-caption" placeholder="添加说明文字..." autocomplete="off">
+      </div>
+    </div>
+  </div>
+
   <!-- 3D 地点悬浮卡片覆盖层 -->
   <svg id="connector-lines"></svg>
   <div id="place-cards"></div>

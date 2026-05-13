@@ -11,6 +11,40 @@ const DOUBLE_TAP_MS = IS_TOUCH ? 250 : 350;
 
 let _earth = null;
 
+// ===== 照片查看器 =====
+let _pvPlace = null;
+let _pvIndex = 0;
+
+export function openPhotoViewer(photo, place) {
+  _pvPlace = place;
+  _pvIndex = place.photos ? place.photos.indexOf(photo) : 0;
+  if (_pvIndex < 0) _pvIndex = 0;
+  _renderPhotoViewer();
+  document.getElementById('photo-viewer').classList.remove('hidden');
+}
+
+function _closePhotoViewer() {
+  document.getElementById('photo-viewer').classList.add('hidden');
+}
+
+function _renderPhotoViewer() {
+  const photos = _pvPlace?.photos || [];
+  const photo = photos[_pvIndex];
+  if (!photo) return;
+  document.getElementById('photo-viewer-img').src = photo.dataUrl;
+  document.getElementById('photo-caption').value = photo.caption || '';
+  document.getElementById('photo-index').textContent = photos.length > 1 ? `${_pvIndex + 1} / ${photos.length}` : '';
+  document.getElementById('photo-prev').style.display = photos.length > 1 ? '' : 'none';
+  document.getElementById('photo-next').style.display = photos.length > 1 ? '' : 'none';
+}
+
+function _navigatePhoto(delta) {
+  const photos = _pvPlace?.photos || [];
+  if (photos.length === 0) return;
+  _pvIndex = (_pvIndex + delta + photos.length) % photos.length;
+  _renderPhotoViewer();
+}
+
 // ===== 初始化 =====
 
 export function init(earth) {
@@ -448,6 +482,8 @@ function _renderDetailPhotos(place) {
       img.src = photo.dataUrl;
       img.alt = photo.caption || '';
       img.title = photo.caption || '';
+      img.style.cursor = 'pointer';
+      img.addEventListener('click', () => openPhotoViewer(photo, place));
       wrapper.appendChild(img);
       if (photo.caption) {
         const cap = document.createElement('span');
@@ -487,4 +523,29 @@ export function navigateCard(direction) {
 function _bindEvents() {
   // 仅保留关闭详情按钮事件（其余由 console.js 统一管理）
   document.getElementById('btn-close-detail').addEventListener('click', hideDetail);
+
+  // 照片查看器
+  document.getElementById('photo-viewer').querySelector('.btn-close').addEventListener('click', _closePhotoViewer);
+  document.getElementById('photo-viewer').querySelector('.modal-backdrop').addEventListener('click', _closePhotoViewer);
+  document.getElementById('photo-prev').addEventListener('click', (e) => { e.stopPropagation(); _navigatePhoto(-1); });
+  document.getElementById('photo-next').addEventListener('click', (e) => { e.stopPropagation(); _navigatePhoto(1); });
+
+  // ESC 关闭查看器
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      const viewer = document.getElementById('photo-viewer');
+      if (!viewer.classList.contains('hidden')) {
+        _closePhotoViewer();
+      }
+    }
+    // 左右箭头翻页
+    if (e.key === 'ArrowLeft') {
+      const viewer = document.getElementById('photo-viewer');
+      if (!viewer.classList.contains('hidden')) _navigatePhoto(-1);
+    }
+    if (e.key === 'ArrowRight') {
+      const viewer = document.getElementById('photo-viewer');
+      if (!viewer.classList.contains('hidden')) _navigatePhoto(1);
+    }
+  });
 }

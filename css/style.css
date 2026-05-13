@@ -451,3 +451,58 @@ input, textarea {
   text-align: center; color: #555;
   padding: 2rem 0; font-size: 0.875rem;
 }
+
+/* ===== 照片查看器 ===== */
+.photo-viewer-content {
+  position: relative;
+  max-width: 90vw;
+  max-height: 90vh;
+}
+.photo-viewer-content img {
+  max-width: 100%;
+  max-height: 85vh;
+  border-radius: 0.375rem;
+  object-fit: contain;
+}
+.photo-nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0,0,0,0.5);
+  border: none;
+  color: #ccc;
+  font-size: 2.5rem;
+  cursor: pointer;
+  padding: 0.5rem 0.75rem;
+  z-index: 10;
+  transition: color 0.15s, background 0.15s;
+  line-height: 1;
+}
+.photo-nav-btn:hover { color: #fff; background: rgba(0,0,0,0.7); }
+.photo-prev { left: 0.5rem; border-radius: 0 0.375rem 0.375rem 0; }
+.photo-next { right: 0.5rem; border-radius: 0.375rem 0 0 0.375rem; }
+.photo-index {
+  position: absolute;
+  bottom: 4rem;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #888;
+  font-size: 0.75rem;
+  background: rgba(0,0,0,0.5);
+  padding: 0.25rem 0.625rem;
+  border-radius: 0.25rem;
+  z-index: 10;
+}
+.photo-caption-wrap { margin-top: 0.625rem; }
+.photo-caption-wrap input {
+  width: 100%;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid #333;
+  border-radius: 0.375rem;
+  padding: 0.625rem 0.875rem;
+  color: #ccc;
+  font-size: 0.875rem;
+  outline: none;
+}
+.btn-close-light { color: #ccc; }
+.btn-close-light:hover { color: #fff; }
