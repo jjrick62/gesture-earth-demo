@@ -385,6 +385,17 @@ input, textarea {
   transition: border-color 0.15s, color 0.15s;
 }
 .btn-overview:hover { border-color: #666; color: #fff; }
+.btn-account {
+  position: fixed; top: 1rem; right: 7rem;
+  width: 2.5rem; height: 2.5rem;
+  background: rgba(16,16,22,0.85);
+  border: 1px solid #333; border-radius: 0.5rem;
+  color: #888; font-size: 1rem; line-height: 1;
+  cursor: pointer; z-index: 100;
+  backdrop-filter: blur(8px);
+  transition: border-color 0.15s, color 0.15s;
+}
+.btn-account:hover { border-color: #666; color: #fff; }
 
 /* ===== 地点总览弹窗 ===== */
 .overview-content {

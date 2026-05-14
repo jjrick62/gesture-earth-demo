@@ -1,6 +1,6 @@
 // ===== 卡片管理控制台（搬自旅行相册 app.js，API 层） =====
 
-import { initDB, getAllPlaces, savePlace, deletePlace, uploadPhoto, isLoggedIn, login, register, logout } from './api.js';
+import { initDB, getAllPlaces, savePlace, deletePlace, uploadPhoto, isLoggedIn, getCurrentUser, login, register, logout } from './api.js';
 import { syncPlaceCards, showDetail, hideDetail } from './card.js';
 
 const RATING_COLORS = ['', '#888888', '#4b9ee0', '#e0b84b', '#e0b84b', '#ffffff'];
@@ -624,6 +624,19 @@ function _bindEvents() {
   // 总览弹窗关闭
   document.getElementById('overview-modal').querySelector('.btn-close').addEventListener('click', () => _closeOverview());
   document.getElementById('overview-modal').querySelector('.modal-backdrop').addEventListener('click', () => _closeOverview());
+
+  // 账号按钮
+  document.getElementById('btn-account').addEventListener('click', () => {
+    if (isLoggedIn()) {
+      const user = getCurrentUser();
+      if (confirm(`当前登录：${user?.email || '未知'}\n\n确定退出登录？`)) {
+        logout();
+        location.reload();
+      }
+    } else {
+      _showAuthModal();
+    }
+  });
 }
 
 // ===== 地点总览 =====
