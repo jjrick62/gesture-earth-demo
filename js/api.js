@@ -1,6 +1,12 @@
 // ===== API 数据层（替代 data.js） =====
 
-const API_BASE = window.API_BASE || 'http://localhost:8000';
+// 防 XSS 劫持：只允许 localhost 或相对路径（同源），冻结防改写
+const _raw = window.API_BASE;
+const ALLOWED_ORIGINS = /^(http:\/\/localhost:\d+|\/api)$/;
+const API_BASE = (_raw && ALLOWED_ORIGINS.test(_raw)) ? _raw : 'http://localhost:8000';
+
+// 移除 window 上的属性，防止后续被读取/改写
+try { delete window.API_BASE; } catch (_) {}
 
 let _token = localStorage.getItem('auth_token');
 let _user = null;
