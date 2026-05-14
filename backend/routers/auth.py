@@ -1,3 +1,4 @@
+import secrets
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -6,6 +7,7 @@ from models import User, UserMeta
 from schemas import UserRegister, UserLogin, TokenResponse, UserOut
 from auth import hash_password, verify_password, create_access_token, get_current_user
 from rate_limit import check as rate_check
+from email_utils import send_verification_email
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -25,7 +27,15 @@ async def register(body: UserRegister, request: Request, db: AsyncSession = Depe
     if result.scalar_one_or_none():
         raise HTTPException(status_code=400, detail="该邮箱已注册")
 
-    user = User(email=body.email, password_hash=hash_password(body.password))
+    # 生成邮箱验证 token
+    verify_token = secrets.token_urlsafe(32)
+
+    user = User(
+        email=body.email,
+        password_hash=hash_password(body.password),
+        verification_token=verify_token,
+        is_verified=0,
+    )
     db.add(user)
     await db.commit()
     await db.refresh(user)
@@ -33,6 +43,9 @@ async def register(body: UserRegister, request: Request, db: AsyncSession = Depe
     # 创建默认 meta
     db.add(UserMeta(user_id=user.id))
     await db.commit()
+
+    # 发送验证邮件（异步，不阻塞注册）
+    send_verification_email(body.email, verify_token)
 
     token = create_access_token(user.id)
     return TokenResponse(access_token=token, user=UserOut.model_validate(user))
@@ -82,6 +95,25 @@ async def login(body: UserLogin, db: AsyncSession = Depends(get_db)):
 
     token = create_access_token(user.id)
     return TokenResponse(access_token=token, user=UserOut.model_validate(user))
+
+
+@router.get("/verify/{token}")
+async def verify_email(token: str, db: AsyncSession = Depends(get_db)):
+    """邮箱验证端点（用户在邮件中点击链接访问）"""
+    result = await db.execute(
+        select(User).where(User.verification_token == token)
+    )
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="验证链接无效或已过期")
+
+    if user.is_verified:
+        return {"ok": True, "message": "邮箱已验证过，无需重复验证"}
+
+    user.is_verified = 1
+    user.verification_token = None  # 一次性使用
+    await db.commit()
+    return {"ok": True, "message": "邮箱验证成功！请返回登录"}
 
 
 @router.get("/me", response_model=UserOut)

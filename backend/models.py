@@ -24,6 +24,8 @@ class User(Base):
     password_hash = Column(String, nullable=False)
     failed_login_count = Column(Integer, default=0)
     locked_until = Column(DateTime, nullable=True)
+    is_verified = Column(Integer, default=0)  # 0=未验证, 1=已验证
+    verification_token = Column(String(64), nullable=True)
     created_at = Column(DateTime, default=_now)
 
     places = relationship("Place", back_populates="user", cascade="all, delete-orphan")
