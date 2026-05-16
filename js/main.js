@@ -65,15 +65,18 @@ function onFrame(pts){
 async function init(){
   UI.showLoad();
 
-  // 地球
+  // 地球（先渲染，不阻塞）
   try{
     const c=document.getElementById('globe-container');
     _earth=new Earth(c);
     const asp=window.innerWidth/window.innerHeight;
-    const t=Math.max(0,Math.min(1,(1.6-asp)/1.2));
-    _earth.camera.position.set(0,1.5+t*2.0,3.5+t*2.0);
+    const IS_MOBILE = ('ontouchstart' in window || navigator.maxTouchPoints > 0) && asp < 1.0;
+    const t = IS_MOBILE
+      ? 0.75  // 移动端固定 Y=1.5+0.75*2=3.0, Z=3.5+0.75*2=5.0
+      : Math.max(0, Math.min(1, (1.6 - asp) / 1.2));
+    _earth.camera.position.set(0, 1.5 + t * 2.0, 3.5 + t * 2.0);
     _earth.start();
-    // 卡片系统初始化
+
     initCard(_earth);
     _earth.onPlaceClick = (id) => {
       const place = _earth._places[id];
@@ -83,30 +86,19 @@ async function init(){
       _earth.focusOnPlace(place.lat, place.lng, () => showDetail(id));
     };
 
-    // 卡片管理控制台（内部处理 localStorage 加载 / demo 初始化）
     initConsole(_earth);
 
-    // 地图分层后台加载
     _earth.loadCoastlines().catch(()=>{});
-    _earth.loadAdminBoundaries().catch(()=>{}); // 省界
-    _earth.loadCities().catch(()=>{});          // 市界（省级加载完成后缩放即可见）
+    _earth.loadAdminBoundaries().catch(()=>{});
+    _earth.loadCities().catch(()=>{});
 
-    // 每帧更新卡片屏幕位置
     _earth.onFrame(() => updatePlaceCards());
   }catch(e){fatal(e.message);return;}
 
-  // 映射器
   initMap(_earth);
 
-  // 摄像头
-  try{
-    await initCamera(onFrame);
-    UI.camOn();
-  }catch(e){
-    if(e instanceof CameraError && e.code==='CAMERA_DENIED'){
-      UI.err(e.message,'warn'); UI.camOff();
-    }else{fatal(e.message);return;}
-  }
+  // 地球已就绪，先展示界面（摄像头后台加载，不阻塞）
+  UI.hideLoad(); UI.updSens(getSens()); _run=true; requestAnimationFrame(loop);
 
   // 键盘
   document.addEventListener('keydown',e=>{
@@ -115,7 +107,16 @@ async function init(){
     else if(e.key==='r'||e.key==='R'){ rst(); UI.updSens(getSens()); }
   });
 
-  UI.hideLoad(); UI.updSens(getSens()); _run=true; requestAnimationFrame(loop);
+  // 摄像头后台异步初始化（不阻塞，失败静默降级）
+  initCamera(onFrame).then(() => {
+    UI.camOn();
+  }).catch(e => {
+    if(e instanceof CameraError && e.code==='CAMERA_DENIED'){
+      UI.err(e.message,'warn'); UI.camOff();
+    }else{
+      UI.err(e.message || '摄像头初始化失败,手势不可用','warn'); UI.camOff();
+    }
+  });
 }
 
 init();
