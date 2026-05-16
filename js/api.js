@@ -10,6 +10,9 @@ try { delete window.API_BASE; } catch (_) {}
 
 let _token = localStorage.getItem('auth_token');
 let _user = null;
+let _onAuthExpired = null;
+
+export function onAuthExpired(fn) { _onAuthExpired = fn; }
 
 function authHeaders() {
   return _token ? { Authorization: `Bearer ${_token}`, 'Content-Type': 'application/json' } : { 'Content-Type': 'application/json' };
@@ -28,6 +31,7 @@ async function request(method, path, body) {
   const resp = await fetch(`${API_BASE}${path}`, opts);
   if (resp.status === 401) {
     logout();
+    if (_onAuthExpired) _onAuthExpired();
     throw new Error('登录已过期，请重新登录');
   }
   if (!resp.ok) {

@@ -1,6 +1,6 @@
 // ===== 卡片管理控制台（搬自旅行相册 app.js，API 层） =====
 
-import { initDB, getAllPlaces, savePlace, deletePlace, uploadPhoto, isLoggedIn, getCurrentUser, login, register, logout } from './api.js';
+import { initDB, getAllPlaces, savePlace, deletePlace, uploadPhoto, isLoggedIn, getCurrentUser, login, register, logout, onAuthExpired } from './api.js';
 import { syncPlaceCards, showDetail, hideDetail } from './card.js';
 
 const RATING_COLORS = ['', '#888888', '#4b9ee0', '#e0b84b', '#e0b84b', '#ffffff'];
@@ -134,6 +134,11 @@ export async function initConsole(earth) {
   _earth = earth;
   _earth._persist = null; // API 模式不需要客户端持久化回调
 
+  // 401 过期自动弹登录窗
+  onAuthExpired(() => {
+    _showAuthModal();
+  });
+
   // 加载城市数据
   try {
     const resp = await fetch('data/cities.json');
@@ -145,6 +150,7 @@ export async function initConsole(earth) {
 
   if (!isLoggedIn()) {
     _addDemoPlaces();
+    syncPlaceCards();
     _showAuthModal();
     return; // 等登录后再调 _doInit
   }
