@@ -144,6 +144,7 @@ export async function initConsole(earth) {
   _bindEvents(); // 基础事件尽早绑定，不受登录态影响
 
   if (!isLoggedIn()) {
+    _addDemoPlaces();
     _showAuthModal();
     return; // 等登录后再调 _doInit
   }
@@ -153,29 +154,35 @@ export async function initConsole(earth) {
 
 async function _doInit() {
   try {
+    // 清除未登录时的 demo 点
+    for (const p of DEMO_PLACES) {
+      _earth.removePlace(p.id);
+    }
+
     const meta = await initDB();
     const places = await getAllPlaces();
 
-    if (places.length === 0) {
-      // 首次：填充 demo 数据
-      for (const p of DEMO_PLACES) {
-        await savePlace({
-          name: p.name, full_name: p.fullName, lat: p.lat, lng: p.lng,
-          rating: p.rating, notes: p.notes || '', visit_date: p.visitDate || '',
-        });
-      }
-      // 重新加载（获取服务端 ID）
-      const reloaded = await getAllPlaces();
-      _applyPlaces(reloaded);
-    } else {
-      _applyPlaces(places);
-    }
+    _applyPlaces(places);
 
     _earth.setHome(31.2304, 121.4737, '上海市', '上海市');
     syncPlaceCards();
     _bindEvents();
   } catch (err) {
     console.error('数据加载失败', err);
+  }
+}
+
+function _addDemoPlaces() {
+  for (const p of DEMO_PLACES) {
+    const rating = p.rating || 3;
+    const color = RATING_COLORS[rating] || '#ffffff';
+    _earth.addPlace({
+      id: p.id, name: p.name, fullName: p.fullName,
+      lat: p.lat, lng: p.lng, rating,
+      photos: p.photos || [], notes: p.notes || '', visitDate: p.visitDate || '',
+    }, color, rating);
+    _earth._places[p.id]._color = color;
+    _earth._places[p.id]._rating = rating;
   }
 }
 
